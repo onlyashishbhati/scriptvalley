@@ -5,7 +5,7 @@ type TermsSection = { heading: string; body: string | string[] };
 const SECTIONS: TermsSection[] = [
   {
     heading: "Acceptance of terms",
-    body: "By accessing or using Script Valley, you agree to be bound by these Terms of Service. If you do not agree, do not use the platform. These terms apply to all users — registered or not.",
+    body: "By accessing or using Script Valley, you agree to be bound by these Terms of Service. If you do not agree, do not use the platform. These terms apply to all users, registered or not.",
   },
   {
     heading: "Your account",
@@ -22,7 +22,7 @@ const SECTIONS: TermsSection[] = [
       "You may not use Script Valley to run code that is intended to harm, attack, or compromise any system, network, or service.",
       "You may not use the compiler to mine cryptocurrency, run distributed computing tasks, or perform any activity that constitutes abuse of shared computational resources.",
       "You may not upload, share, or publish content that is illegal, defamatory, obscene, or violates the rights of others.",
-      "You may not attempt to reverse engineer, scrape, or abuse the platform&apos;s APIs beyond normal use.",
+      "You may not attempt to reverse engineer, scrape, or abuse the platform's APIs beyond normal use.",
       "You may not impersonate other users or create fake developer profiles.",
     ],
   },
@@ -31,13 +31,13 @@ const SECTIONS: TermsSection[] = [
     body: [
       "Code and content you publish as public snippets is visible to all users and the general public.",
       "You retain ownership of the code you write. By making it public, you grant Script Valley a non-exclusive, royalty-free licence to display it on the platform.",
-      "You are responsible for ensuring your public content does not infringe on others&apos; intellectual property rights.",
+      "You are responsible for ensuring your public content does not infringe on others' intellectual property rights.",
       "We reserve the right to remove any content that violates these terms without notice.",
     ],
   },
   {
     heading: "Third-party services",
-    body: "Script Valley integrates with GitHub and LeetCode to display public profile data. These services have their own terms and privacy policies. We are not responsible for the availability or accuracy of data returned by third-party APIs. Clerk handles authentication — by using Script Valley, you are also subject to Clerk&apos;s terms of service.",
+    body: "Script Valley uses Convex for data storage and Clerk for authentication. Both services have their own terms and privacy policies. By using Script Valley, you are also subject to Clerk's terms of service. We are not responsible for the availability or practices of these third-party providers.",
   },
   {
     heading: "Availability and modifications",
@@ -50,7 +50,7 @@ const SECTIONS: TermsSection[] = [
   },
   {
     heading: "Limitation of liability",
-    body: "Script Valley is provided free of charge. To the maximum extent permitted by law, we disclaim all warranties, express or implied. We are not liable for any direct, indirect, incidental, or consequential damages arising from your use of the platform — including, but not limited to, loss of data, loss of code, or service interruptions.",
+    body: "Script Valley is provided free of charge. To the maximum extent permitted by law, we disclaim all warranties, express or implied. We are not liable for any direct, indirect, incidental, or consequential damages arising from your use of the platform, including loss of data, loss of code, or service interruptions.",
   },
   {
     heading: "Termination",
@@ -62,7 +62,7 @@ const SECTIONS: TermsSection[] = [
   },
   {
     heading: "Contact",
-    body: "For questions about these terms, use the contact form on this page or email us at hello@scriptvalley.dev.",
+    body: "For questions about these terms, use the contact form on this page or email us at hello@scriptvalley.com.",
   },
 ];
 

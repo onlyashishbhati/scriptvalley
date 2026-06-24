@@ -121,12 +121,7 @@ export default function DSASheetPage() {
       </div>
 
       {/* ── Printable version — hidden on screen, shown only during print ─── */}
-      <PrintableSheet
-        sheet={sheet}
-        attempts={attempts}
-        localAttempts={localAttempts}
-        progress={progressData}
-      />
+      <PrintableSheet sheet={sheet} />
     </>
   );
 }

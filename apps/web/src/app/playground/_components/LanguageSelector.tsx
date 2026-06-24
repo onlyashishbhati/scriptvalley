@@ -2,7 +2,7 @@
 
 import { useCodeEditorStore } from "@/store/useCodeEditorStore";
 import { useEffect, useRef, useState } from "react";
-import { LANGUAGE_CONFIG } from "../../(root)/_constants";
+import { LANGUAGE_CONFIG } from "../_constants";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { ChevronDown, Check } from "lucide-react";
@@ -17,7 +17,11 @@ function LanguageSelector() {
 
   useEffect(() => {
     const h = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setIsOpen(false);
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      )
+        setIsOpen(false);
     };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
@@ -41,8 +45,12 @@ function LanguageSelector() {
           height={14}
           className="object-contain"
         />
-        <span className="min-w-[56px] text-left hidden sm:inline">{currentLanguageObj.label}</span>
-        <ChevronDown className={`w-3 h-3 text-[var(--text-disabled)] transition-transform ${isOpen ? "rotate-180" : ""}`} />
+        <span className="min-w-[56px] text-left hidden sm:inline">
+          {currentLanguageObj.label}
+        </span>
+        <ChevronDown
+          className={`w-3 h-3 text-[var(--text-disabled)] transition-transform ${isOpen ? "rotate-180" : ""}`}
+        />
       </button>
 
       <AnimatePresence>
@@ -69,7 +77,10 @@ function LanguageSelector() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: i * 0.02 }}
-                    onClick={() => { setLanguage(lang.id); setIsOpen(false); }}
+                    onClick={() => {
+                      setLanguage(lang.id);
+                      setIsOpen(false);
+                    }}
                     className={`w-full flex items-center gap-3 px-3 py-2 text-xs transition-colors duration-75 ${
                       isActive
                         ? "bg-[var(--bg-active)] text-[var(--text-primary)]"
@@ -84,7 +95,9 @@ function LanguageSelector() {
                       className="object-contain shrink-0"
                     />
                     <span className="flex-1 text-left">{lang.label}</span>
-                    {isActive && <Check className="w-3 h-3 text-[#3A5EFF] shrink-0" />}
+                    {isActive && (
+                      <Check className="w-3 h-3 text-[#3A5EFF] shrink-0" />
+                    )}
                   </motion.button>
                 );
               })}

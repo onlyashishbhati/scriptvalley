@@ -96,7 +96,7 @@ export default function Footer() {
               {[
                 { icon: Github,  href: "https://github.com",            label: "GitHub"  },
                 { icon: Twitter, href: "https://twitter.com",           label: "Twitter" },
-                { icon: Mail,    href: "mailto:hello@scriptvalley.dev", label: "Email"   },
+                { icon: Mail,    href: "mailto:hello@scriptvalley.com", label: "Email"   },
               ].map(({ icon: Icon, href, label }) => (
                 <a
                   key={label}

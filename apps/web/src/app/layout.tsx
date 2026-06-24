@@ -8,9 +8,7 @@ import AuthModal             from "../components/auth/AuthModal";
 import { Toaster }           from "react-hot-toast";
 import ClientAnalytics       from "../components/ClientAnalytics";
 import UserSyncProvider      from "../components/providers/UserSyncProvider";
-import { DockWrapper }       from "../components/DockWrapper";
-import Footer                from "../components/Footer";
-import Navbar                from "../components/Navbar";
+import SiteChrome from "../components/SiteChrome";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +25,7 @@ const SITE_NAME = "Script Valley";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default:  `${SITE_NAME} — Learn DSA & Programming`,
+    default:  `${SITE_NAME} · Learn DSA & Programming`,
     template: `%s — ${SITE_NAME}`,
   },
   description:
@@ -37,12 +35,12 @@ export const metadata: Metadata = {
     type:        "website",
     locale:      "en_US",
     url:         SITE_URL,
-    title:       `${SITE_NAME} — Learn DSA & Programming`,
+    title:       `${SITE_NAME} · Learn DSA & Programming`,
     description: "Structured DSA courses and curated problem sheets built by expert instructors.",
   },
   twitter: {
     card:  "summary",
-    title: `${SITE_NAME} — Learn DSA & Programming`,
+    title: `${SITE_NAME} · Learn DSA & Programming`,
   },
   robots: {
     index:  true,
@@ -92,10 +90,7 @@ export default function RootLayout({
                 works in Navbar, course cards, DSA sheets — anywhere */}
             <AuthModalProvider>
               <UserSyncProvider />
-              <Navbar />
-              {children}
-              <DockWrapper />
-              <Footer />
+              <SiteChrome>{children}</SiteChrome>
 
               {/* ↓ Renders the modal portal — must be inside AuthModalProvider */}
               <AuthModal />

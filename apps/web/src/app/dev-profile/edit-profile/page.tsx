@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import Sidebar from "./_components/Sidebar";
+import Sidebar, { type EditProfileTab } from "./_components/Sidebar";
 import BasicInfoForm from "./_components/BasicInfoForm";
 import SocialForm from "./_components/SocialForm";
 import PlatformForm from "./_components/PlatformForm";
+import PortfolioSettings from "./_components/PortfolioSettings";
+import ShareSettings from "./_components/ShareSettings";
 import { Menu, X } from "lucide-react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
@@ -13,15 +16,52 @@ const TABS = [
   { label: "Basic Info", description: "Update your details to personalize your developer profile."    },
   { label: "Socials",    description: "Add links to your social media accounts for better networking." },
   { label: "Platform",   description: "Connect your coding platform to showcase your coding journey."  },
-] as const;
+  { label: "Portfolio",  description: "Add a bio, skills, projects, and experience to your mini-portfolio." },
+  { label: "Share",      description: "Set a username and control who can see your public profile."    },
+] as const satisfies readonly { label: EditProfileTab; description: string }[];
 
-type Tab = (typeof TABS)[number]["label"];
+type Tab = EditProfileTab;
+
+const MOBILE_TABS: Tab[] = ["Basic Info", "Socials", "Platform", "Portfolio", "Share"];
+
+function isValidTab(value: string | null): value is Tab {
+  return !!value && TABS.some((t) => t.label === value);
+}
 
 function EditProfileContent() {
-  const [selectedTab, setSelectedTab] = useState<Tab>("Basic Info");
-  const [drawerOpen,  setDrawerOpen]  = useState(false);
+  const searchParams = useSearchParams();
+  const router        = useRouter();
+  const pathname       = usePathname();
+
+  // Deep-link support: ?tab=Socials, ?tab=Share, etc. ProfileCompletion links
+  // and the Share-tab "set a username" prompt both rely on this. This closes
+  // out the "Edit-profile page searchParams tab deep-link support" item from
+  // the still_pending_from_before list.
+  const tabFromUrl = searchParams.get("tab");
+  const [selectedTab, setSelectedTabState] = useState<Tab>(
+    isValidTab(tabFromUrl) ? tabFromUrl : "Basic Info",
+  );
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const currentTab = TABS.find((t) => t.label === selectedTab)!;
+
+  // Keep the URL in sync when the tab changes via click — makes the current
+  // tab shareable/bookmarkable and survives a refresh.
+  function setSelectedTab(tab: Tab) {
+    setSelectedTabState(tab);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", tab);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }
+
+  // If the URL's ?tab= changes externally (e.g. back/forward nav, or a link
+  // from elsewhere in the app like ProfileCompletion), follow it.
+  useEffect(() => {
+    if (isValidTab(tabFromUrl) && tabFromUrl !== selectedTab) {
+      setSelectedTabState(tabFromUrl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabFromUrl]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setDrawerOpen(false); };
@@ -43,13 +83,14 @@ function EditProfileContent() {
         </button>
       </div>
 
-      {/* Mobile tab strip */}
-      <div className="md:hidden flex items-center gap-px px-3 py-2 border-b border-[var(--border-subtle)] bg-[var(--bg-base)]">
-        {(["Basic Info", "Socials", "Platform"] as Tab[]).map((tab) => (
+      {/* Mobile tab strip — now 5 tabs, made horizontally scrollable since
+         they no longer fit on one row with equal flex-1 widths. */}
+      <div className="md:hidden flex items-center gap-px px-3 py-2 border-b border-[var(--border-subtle)] bg-[var(--bg-base)] overflow-x-auto">
+        {MOBILE_TABS.map((tab) => (
           <button
             key={tab}
             onClick={() => setSelectedTab(tab)}
-            className={`flex-1 px-2 py-1.5 rounded-md text-xs transition-colors duration-100 ${
+            className={`shrink-0 px-2.5 py-1.5 rounded-md text-xs transition-colors duration-100 ${
               selectedTab === tab
                 ? "bg-[var(--bg-active)] text-[var(--text-primary)]"
                 : "text-[var(--text-faint)] hover:text-[var(--text-muted)] hover:bg-[var(--bg-hover)]"
@@ -129,6 +170,8 @@ function EditProfileContent() {
                 {selectedTab === "Basic Info" && <BasicInfoForm />}
                 {selectedTab === "Socials"    && <SocialForm />}
                 {selectedTab === "Platform"   && <PlatformForm />}
+                {selectedTab === "Portfolio"  && <PortfolioSettings />}
+                {selectedTab === "Share"      && <ShareSettings />}
               </motion.div>
             </AnimatePresence>
           </main>

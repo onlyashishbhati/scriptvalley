@@ -3,8 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 
-// Milestones: [delayMs, targetValue]
-// Irregular gaps make it feel like real loading, not a fake timer
 const STAGES: [number, number][] = [
   [0,    0],
   [120,  18],

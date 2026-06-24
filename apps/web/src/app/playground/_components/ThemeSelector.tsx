@@ -2,16 +2,24 @@
 
 import { useCodeEditorStore } from "@/store/useCodeEditorStore";
 import { useEffect, useRef, useState } from "react";
-import { THEMES } from "../../(root)/_constants";
+import { THEMES } from "../_constants";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, Moon, Sun, Github, Laptop, Cloud, Check } from "lucide-react";
+import {
+  ChevronDown,
+  Moon,
+  Sun,
+  Github,
+  Laptop,
+  Cloud,
+  Check,
+} from "lucide-react";
 import useMounted from "@/hooks/useMounted";
 
 const THEME_ICONS: Record<string, React.ReactNode> = {
-  "vs-dark":        <Moon className="w-3.5 h-3.5" />,
-  "vs-light":       <Sun className="w-3.5 h-3.5" />,
-  "github-dark":    <Github className="w-3.5 h-3.5" />,
-  monokai:          <Laptop className="w-3.5 h-3.5" />,
+  "vs-dark": <Moon className="w-3.5 h-3.5" />,
+  "vs-light": <Sun className="w-3.5 h-3.5" />,
+  "github-dark": <Github className="w-3.5 h-3.5" />,
+  monokai: <Laptop className="w-3.5 h-3.5" />,
   "solarized-dark": <Cloud className="w-3.5 h-3.5" />,
 };
 
@@ -24,7 +32,11 @@ function ThemeSelector() {
 
   useEffect(() => {
     const h = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setIsOpen(false);
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      )
+        setIsOpen(false);
     };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
@@ -44,8 +56,12 @@ function ThemeSelector() {
         <span className="text-[var(--text-faint)]">
           {THEME_ICONS[theme] ?? <Moon className="w-3.5 h-3.5" />}
         </span>
-        <span className="hidden lg:inline min-w-[60px] text-left">{currentTheme?.label}</span>
-        <ChevronDown className={`w-3 h-3 text-[var(--text-disabled)] transition-transform ${isOpen ? "rotate-180" : ""}`} />
+        <span className="hidden lg:inline min-w-[60px] text-left">
+          {currentTheme?.label}
+        </span>
+        <ChevronDown
+          className={`w-3 h-3 text-[var(--text-disabled)] transition-transform ${isOpen ? "rotate-180" : ""}`}
+        />
       </button>
 
       <AnimatePresence>
@@ -69,18 +85,27 @@ function ThemeSelector() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: i * 0.03 }}
-                    onClick={() => { setTheme(t.id); setIsOpen(false); }}
+                    onClick={() => {
+                      setTheme(t.id);
+                      setIsOpen(false);
+                    }}
                     className={`w-full flex items-center gap-3 px-3 py-2 text-xs transition-colors duration-75 ${
                       isActive
                         ? "bg-[var(--bg-active)] text-[var(--text-primary)]"
                         : "text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-secondary)]"
                     }`}
                   >
-                    <span className={isActive ? "text-[#3A5EFF]" : "text-[var(--text-faint)]"}>
+                    <span
+                      className={
+                        isActive ? "text-[#3A5EFF]" : "text-[var(--text-faint)]"
+                      }
+                    >
                       {THEME_ICONS[t.id] ?? <Moon className="w-3.5 h-3.5" />}
                     </span>
                     <span className="flex-1 text-left">{t.label}</span>
-                    {isActive && <Check className="w-3 h-3 text-[#3A5EFF] shrink-0" />}
+                    {isActive && (
+                      <Check className="w-3 h-3 text-[#3A5EFF] shrink-0" />
+                    )}
                   </motion.button>
                 );
               })}

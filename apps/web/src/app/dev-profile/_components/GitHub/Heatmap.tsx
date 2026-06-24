@@ -29,7 +29,7 @@ export default function Heatmap({
     setTip({
       x: e.clientX - (rect?.left ?? 0),
       y: e.clientY - (rect?.top ?? 0),
-      text: `${count} contribution${count === 1 ? "" : "s"} — ${date}`,
+      text: `${count} contribution${count === 1 ? "" : "s"} · ${date}`,
     });
   };
   const onMove = (e: React.MouseEvent) => {

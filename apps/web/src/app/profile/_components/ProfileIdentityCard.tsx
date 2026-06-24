@@ -140,9 +140,9 @@ export default function ProfileIdentityCard({ user, profile, socials, platforms 
 
         {!hasAnyDetail && (
           <p className="text-sm text-[var(--text-disabled)] italic py-4 text-center">
-            No details added yet —{" "}
+            No details added yet. {" "}
             <Link href="/dev-profile/edit-profile" className="text-[#3A5EFF] hover:underline not-italic">
-              edit your profile
+              Add your location, college, and coding profiles.
             </Link>
           </p>
         )}

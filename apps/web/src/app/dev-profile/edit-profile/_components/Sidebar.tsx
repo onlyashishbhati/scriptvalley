@@ -1,18 +1,30 @@
 "use client";
 
-import { User, Share2, Code, ChevronLeft } from "lucide-react";
+import { User, Share2, Code, FolderGit2, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
+// This export was MISSING from the previous version of this file — that's
+// the root cause of Portfolio/Share never appearing. edit-profile/page.tsx
+// does:
+//   import Sidebar, { type EditProfileTab } from "./_components/Sidebar";
+// but this file only had an inline, unexported "Basic Info" | "Socials" |
+// "Platform" union and a 3-item tabs array. The Portfolio/Share tabs simply
+// did not exist here, regardless of anything else being wired up correctly
+// elsewhere.
+export type EditProfileTab = "Basic Info" | "Socials" | "Platform" | "Portfolio" | "Share";
+
 interface SidebarProps {
   selectedTab: string;
-  setSelectedTab: (tab: "Basic Info" | "Socials" | "Platform") => void;
+  setSelectedTab: (tab: EditProfileTab) => void;
 }
 
-const tabs: { label: "Basic Info" | "Socials" | "Platform"; icon: React.ElementType }[] = [
-  { label: "Basic Info", icon: User   },
-  { label: "Socials",    icon: Share2 },
-  { label: "Platform",   icon: Code   },
+const tabs: { label: EditProfileTab; icon: React.ElementType }[] = [
+  { label: "Basic Info", icon: User       },
+  { label: "Socials",    icon: Share2     },
+  { label: "Platform",   icon: Code       },
+  { label: "Portfolio",  icon: FolderGit2 },
+  { label: "Share",      icon: Share2     },
 ];
 
 export default function Sidebar({ selectedTab, setSelectedTab }: SidebarProps) {

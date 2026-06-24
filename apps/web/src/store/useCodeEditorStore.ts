@@ -1,8 +1,7 @@
 import { CodeEditorState } from "./../types/index";
-import { LANGUAGE_CONFIG } from "@/app/(root)/_constants";
+import { LANGUAGE_CONFIG } from "@/app/playground/_constants";
 import { create } from "zustand";
-import { editor } from 'monaco-editor';
-
+import { editor } from "monaco-editor";
 
 type IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
 
@@ -102,7 +101,10 @@ export const useCodeEditorStore = create<CodeEditorState>((set, get) => {
         console.log("data back from piston:", data);
 
         if (data.message) {
-          set({ error: data.message, executionResult: { code, output: "", error: data.message } });
+          set({
+            error: data.message,
+            executionResult: { code, output: "", error: data.message },
+          });
           return;
         }
 
@@ -156,4 +158,5 @@ export const useCodeEditorStore = create<CodeEditorState>((set, get) => {
   };
 });
 
-export const getExecutionResult = () => useCodeEditorStore.getState().executionResult;
+export const getExecutionResult = () =>
+  useCodeEditorStore.getState().executionResult;

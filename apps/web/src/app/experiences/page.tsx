@@ -43,10 +43,10 @@ export default function ExperiencesListPage() {
         {/* Header */}
         <div className="mt-8 mb-6 flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-[var(--text-disabled)] mb-1">Community</p>
-            <h1 className="text-2xl font-semibold text-[var(--text-primary)]">Interview Experiences</h1>
+            <p className="text-[10px] uppercase tracking-widest text-[var(--text-disabled)] mb-1">Experiences</p>
+            <h1 className="text-2xl font-semibold text-[var(--text-primary)]">Interview Experiences from Real Students</h1>
             <p className="mt-1.5 text-sm text-[var(--text-disabled)]">
-              Real stories from placed students — companies, rounds, tips, and outcomes.
+              Real stories from students who cracked their coding interviews. Companies, rounds, tips, and outcomes.
             </p>
           </div>
           <Link
@@ -88,7 +88,7 @@ export default function ExperiencesListPage() {
                   ? "border-[#3A5EFF]/40 bg-[#3A5EFF]/5 text-[#3A5EFF]"
                   : "border-[var(--border-subtle)] text-[var(--text-faint)] hover:text-[var(--text-muted)] hover:bg-[var(--bg-hover)]"
               }`}
-              title="Show only my experiences"
+              title="Show only my submissions"
             >
               <User className="w-3.5 h-3.5" />
               Mine
@@ -171,7 +171,7 @@ export default function ExperiencesListPage() {
             className="flex items-center justify-between px-4 py-2.5 rounded-md border border-[#3A5EFF]/20 bg-[#3A5EFF]/5 mb-4"
           >
             <p className="text-xs text-[#3A5EFF]">
-              Showing your experiences — you can edit or delete them from the cards below.
+              Showing your experiences. Edit or delete them from the cards below.
             </p>
             <button onClick={() => setMyOnly(false)} className="text-[10px] text-[#3A5EFF]/70 hover:text-[#3A5EFF]">
               Show all ×
@@ -187,7 +187,7 @@ export default function ExperiencesListPage() {
           <div className="py-20 flex flex-col items-center gap-3 text-center">
             <BookOpen className="w-8 h-8 text-[var(--bg-active)]" />
             <p className="text-sm text-[var(--text-disabled)]">
-              {myOnly ? "You haven't shared any experiences yet." : "No experiences found"}
+              {myOnly ? " You haven't shared an experience yet." : "No experiences found"}
             </p>
             <Link
               href="/experiences/submit"

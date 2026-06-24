@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Code2, X, Check } from "lucide-react";
 import { diffLines } from "diff";
-import { LANGUAGE_CONFIG } from "../../(root)/_constants";
+import { LANGUAGE_CONFIG } from "../_constants";
 
 interface AISuggestion {
   success: boolean;
@@ -22,31 +22,47 @@ interface AICodePreviewProps {
   onApply: () => void;
 }
 
-function AICodePreview({ suggestion, language, isOpen, onClose, onApply }: AICodePreviewProps) {
+function AICodePreview({
+  suggestion,
+  language,
+  isOpen,
+  onClose,
+  onApply,
+}: AICodePreviewProps) {
   const modalRef = useRef<HTMLDivElement>(null);
 
-  const handleApplyAndClose = () => { onApply(); onClose(); };
+  const handleApplyAndClose = () => {
+    onApply();
+    onClose();
+  };
 
   useEffect(() => {
-    const h = (e: KeyboardEvent) => { if (e.key === "Escape" && isOpen) onClose(); };
+    const h = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) onClose();
+    };
     if (isOpen) document.addEventListener("keydown", h);
     return () => document.removeEventListener("keydown", h);
   }, [isOpen, onClose]);
 
   const renderDiff = () => {
     if (!suggestion) return null;
-    return diffLines(suggestion.originalCode, suggestion.suggestedCode).map((part, i) => {
-      const cls = part.added
-        ? "bg-emerald-500/[0.05] text-emerald-400/80"
-        : part.removed
-        ? "bg-red-500/[0.05] text-red-400/50 line-through"
-        : "text-[#888]";
-      return (
-        <span key={i} className={`block whitespace-pre-wrap font-mono text-xs ${cls}`}>
-          {part.value}
-        </span>
-      );
-    });
+    return diffLines(suggestion.originalCode, suggestion.suggestedCode).map(
+      (part, i) => {
+        const cls = part.added
+          ? "bg-emerald-500/[0.05] text-emerald-400/80"
+          : part.removed
+            ? "bg-red-500/[0.05] text-red-400/50 line-through"
+            : "text-[#888]";
+        return (
+          <span
+            key={i}
+            className={`block whitespace-pre-wrap font-mono text-xs ${cls}`}
+          >
+            {part.value}
+          </span>
+        );
+      },
+    );
   };
 
   return (
@@ -57,7 +73,9 @@ function AICodePreview({ suggestion, language, isOpen, onClose, onApply }: AICod
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
-          onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) onClose();
+          }}
         >
           <motion.div
             ref={modalRef}
@@ -75,9 +93,14 @@ function AICodePreview({ suggestion, language, isOpen, onClose, onApply }: AICod
                   <Code2 className="w-3.5 h-3.5 text-[#3A5EFF]" />
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase tracking-widest text-[var(--text-disabled)]">Diff Preview</p>
+                  <p className="text-[10px] uppercase tracking-widest text-[var(--text-disabled)]">
+                    Diff Preview
+                  </p>
                   <p className="text-xs font-medium text-[var(--text-secondary)] leading-tight">
-                    {suggestion.action === "fix" ? "Bug Fixes" : "Optimizations"} · {LANGUAGE_CONFIG[language].label}
+                    {suggestion.action === "fix"
+                      ? "Bug Fixes"
+                      : "Optimizations"}{" "}
+                    · {LANGUAGE_CONFIG[language].label}
                   </p>
                 </div>
               </div>
@@ -93,11 +116,15 @@ function AICodePreview({ suggestion, language, isOpen, onClose, onApply }: AICod
             <div className="flex items-center gap-4 px-5 py-2 border-b border-[var(--border-default)] bg-[var(--bg-input)] shrink-0">
               <div className="flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-sm bg-emerald-500/30" />
-                <span className="text-[10px] text-[var(--text-disabled)]">Added</span>
+                <span className="text-[10px] text-[var(--text-disabled)]">
+                  Added
+                </span>
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-sm bg-red-500/30" />
-                <span className="text-[10px] text-[var(--text-disabled)]">Removed</span>
+                <span className="text-[10px] text-[var(--text-disabled)]">
+                  Removed
+                </span>
               </div>
             </div>
 

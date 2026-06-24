@@ -136,7 +136,7 @@ export default function LeetCodeCalendar({
                           setTip({
                             x: e.clientX,
                             y: e.clientY,
-                            text: `${formatNice(cellItem.date!)} — ${cellItem.count} submissions`,
+                            text: `${formatNice(cellItem.date!)} · ${cellItem.count}  submissions`,
                           })
                         }
                         onMouseLeave={() => setTip(null)}

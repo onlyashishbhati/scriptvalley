@@ -7,7 +7,10 @@ import { Id } from "../../../../../../packages/convex/convex/_generated/dataMode
 import SnippetLoadingSkeleton from "./_components/SnippetLoadingSkeleton";
 import { Clock, Code, MessageSquare, User } from "lucide-react";
 import { Editor } from "@monaco-editor/react";
-import { defineMonacoThemes, LANGUAGE_CONFIG } from "@/app/(root)/_constants";
+import {
+  defineMonacoThemes,
+  LANGUAGE_CONFIG,
+} from "@/app/playground/_constants";
 import CopyButton from "./_components/CopyButton";
 import Comments from "./_components/Comments";
 import Image from "next/image";
@@ -29,7 +32,6 @@ function SnippetDetailPage() {
     <div className="min-h-screen bg-[var(--bg-base)]">
       <main className="max-w-4xl mx-auto mt-20 px-4 sm:px-6 pb-16">
         <div className="space-y-4">
-
           <div className="bg-[var(--bg-base)] border border-[var(--border-subtle)] rounded-lg p-5 sm:p-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 mb-5">
               <div className="flex items-start gap-3.5">
@@ -53,7 +55,9 @@ function SnippetDetailPage() {
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Clock className="w-3 h-3" />
-                      <span>{new Date(snippet._creationTime).toLocaleDateString()}</span>
+                      <span>
+                        {new Date(snippet._creationTime).toLocaleDateString()}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <MessageSquare className="w-3 h-3" />

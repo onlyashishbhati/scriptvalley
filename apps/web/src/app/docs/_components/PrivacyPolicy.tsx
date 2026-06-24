@@ -7,31 +7,26 @@ const SECTIONS: PolicySection[] = [
     heading: "Information we collect",
     body: [
       "Account information: When you sign in via Google, we receive your name, email address, and profile picture. We do not store your Google password.",
-      "Usage data: We store the code you run, snippets you save, DSA progress you mark, and notes you write — this is the core product data.",
-      "Platform handles: If you connect GitHub or LeetCode, we store the username you provide. We use it to fetch public data from those platforms on your behalf.",
+      "Usage data: We store the code you run, snippets you save, course progress, DSA progress you mark, and notes you write. This is the core product data.",
       "Analytics: We collect anonymised usage data (page views, feature usage) to understand how the platform is used. No personally identifiable information is attached to this data.",
     ],
   },
   {
     heading: "How we use your information",
     body: [
-      "To operate the platform — running your code, tracking your DSA progress, storing your notes and snippets.",
-      "To display your developer profile — combining your progress data, GitHub stats, and LeetCode stats.",
-      "To improve Script Valley — understanding which features are used, what&apos;s broken, and what to build next.",
+      "To operate the platform: running your code, tracking your course and DSA progress, storing your notes and snippets.",
+      "To display your Developer Profile: combining your course progress, DSA progress, streaks, and activity data.",
+      "To improve Script Valley: understanding which features are used, what is broken, and what to build next.",
       "We do not sell your data. We do not use your data to train AI models. We do not share your data with advertisers.",
     ],
   },
   {
     heading: "Data storage",
-    body: "Your data is stored securely via Convex. Code executions, snippets, notes, DSA progress, and profile data are all stored in Convex&apos;s managed database. Authentication is handled by Clerk. Both services have their own privacy policies and security practices.",
+    body: "Your data is stored securely via Convex. Code executions, snippets, notes, course progress, DSA progress, and profile data are all stored in Convex's managed database. Authentication is handled by Clerk. Both services have their own privacy policies and security practices.",
   },
   {
     heading: "Public vs. private data",
-    body: "Snippets you mark as public are visible to anyone, including non-logged-in visitors. Your developer profile is publicly accessible at scriptvalley.dev/profile/[username]. Notes, private snippets, starred questions, and execution history are private and only visible to you.",
-  },
-  {
-    heading: "GitHub and LeetCode data",
-    body: "When you connect GitHub or LeetCode, we fetch publicly available data from those platforms using your username. We do not request OAuth tokens — we only read public profile and activity data. We do not write to your GitHub or LeetCode accounts.",
+    body: "Snippets you mark as public are visible to anyone, including visitors who are not signed in. Your Developer Portfolio is publicly accessible at scriptvalley.com/u/username once you publish it. Your Developer Profile, notes, private snippets, starred questions, and execution history are private and only visible to you.",
   },
   {
     heading: "Cookies",
@@ -39,7 +34,7 @@ const SECTIONS: PolicySection[] = [
   },
   {
     heading: "Data deletion",
-    body: "You can delete your account and all associated data by contacting us via the contact form. We will process deletion requests within 7 business days. Note that public snippets may be cached by search engines and third parties — we cannot guarantee removal from those caches.",
+    body: "You can delete your account and all associated data by contacting us via the contact form. We will process deletion requests within 7 business days. Public snippets may be cached by search engines and third parties. We cannot guarantee removal from those caches.",
   },
   {
     heading: "Changes to this policy",
@@ -47,7 +42,7 @@ const SECTIONS: PolicySection[] = [
   },
   {
     heading: "Contact",
-    body: "For privacy-related questions or deletion requests, use the contact form on this page or email us at hello@scriptvalley.dev.",
+    body: "For privacy-related questions or deletion requests, use the contact form on this page or email us at hello@scriptvalley.com.",
   },
 ];
 

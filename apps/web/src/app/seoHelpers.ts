@@ -72,7 +72,7 @@ function make(
 // ── Course metadata ───────────────────────────────────────────────────────────
 export function courseMetadata(course: Course): Metadata {
   return make(
-    `${course.title} — ${SITE_NAME}`,
+    `${course.title} · ${SITE_NAME}`,
     course.description ??
       `Learn ${course.title} with ${
         course.modules?.length ?? 0
@@ -86,7 +86,7 @@ export function moduleMetadata(
   mod: { title: string; slug: string; description?: string }
 ): Metadata {
   return make(
-    `${mod.title} — ${course.title} — ${SITE_NAME}`,
+    `${mod.title} · ${course.title} · ${SITE_NAME}`,
     mod.description ??
       `${mod.title} is part of the ${course.title} course on ${SITE_NAME}.`,
     urls.module(course.slug, mod.slug),
@@ -101,10 +101,10 @@ export function lessonMetadata(
   lSlug: string
 ): Metadata {
   return make(
-    `${lesson.title} — ${mod.title} — ${course.title} — ${SITE_NAME}`,
+    `${lesson.title} · ${mod.title}· ${course.title} · ${SITE_NAME}`,
     lesson.topicsCovered
       ? `Topics: ${lesson.topicsCovered}. Part of ${course.title} on ${SITE_NAME}.`
-      : `${lesson.title} — part of the ${mod.title} module in ${course.title} on ${SITE_NAME}.`,
+      : `$${lesson.title}, part of the ${mod.title}  module in ${course.title} on ${SITE_NAME}.`,
     urls.lesson(course.slug, mod.slug, lSlug),
     "article"
   );
@@ -115,7 +115,7 @@ export function assessmentMetadata(
   mod: { title: string; slug: string }
 ): Metadata {
   return make(
-    `Practice & Assessment — ${mod.title} — ${course.title} — ${SITE_NAME}`,
+    `Practice & Assessment · ${mod.title} · ${course.title} · ${SITE_NAME}`,
     `Test your understanding of ${mod.title} with MCQs and coding challenges on ${SITE_NAME}.`,
     urls.lesson(course.slug, mod.slug, "assessments"),
     "article"
@@ -125,7 +125,7 @@ export function assessmentMetadata(
 // ── DSA sheet metadata ────────────────────────────────────────────────────────
 export function dsaSheetsPageMetadata(): Metadata {
   return make(
-    `DSA Sheets — ${SITE_NAME}`,
+    `DSA Sheets · ${SITE_NAME}`,
     `Browse curated DSA problem sheets for interview prep, revision, and concept mastery on ${SITE_NAME}.`,
     urls.dsaSheets()
   );
@@ -138,7 +138,7 @@ export function dsaSheetMetadata(sheet: DsaSheet): Metadata {
   );
 
   return make(
-    `${sheet.name} — DSA Sheet — ${SITE_NAME}`,
+    `${sheet.name} · DSA Sheet · ${SITE_NAME}`,
     sheet.description
       ? sheet.description.replace(/<[^>]+>/g, "").slice(0, 160)
       : `Practice ${totalQ} DSA problems in the ${sheet.name} sheet on ${SITE_NAME}.`,
@@ -203,7 +203,7 @@ export function dsaSheetsListJsonLd(
   return {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    name: `DSA Sheets — ${SITE_NAME}`,
+    name: `DSA Sheets · ${SITE_NAME}`,
     url: urls.dsaSheets(),
     itemListElement: sheets.map((s, i) => ({
       "@type": "ListItem",
