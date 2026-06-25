@@ -12,11 +12,10 @@ const COLS: {
   {
     title: "Product",
     links: [
-      { label: "Compiler",    href: "/playground"  },
+      { label: "Courses",    href: "/courses"     },
       { label: "DSA Sheets",  href: "/dsa-sheet"   },
-      { label: "Snippets",    href: "/snippets"     },
       { label: "Dev Profile", href: "/dev-profile"  },
-      { label: "Notes",       href: "/notes"        },
+      { label: "Snippets",    href: "/snippets"     },
       { label: "Contests",    href: "/contests"     },
     ],
   },
@@ -88,13 +87,12 @@ export default function Footer() {
             </Link>
 
             <p className="text-xs text-[var(--text-disabled)] leading-relaxed max-w-[220px]">
-              A free, unified platform for developers — code, track, share, and
+              A free, unified platform for developers - code, track, share, and
               grow without switching tabs.
             </p>
 
             <div className="flex items-center gap-1.5 mt-1">
               {[
-                { icon: Github,  href: "https://github.com",            label: "GitHub"  },
                 { icon: Twitter, href: "https://twitter.com",           label: "Twitter" },
                 { icon: Mail,    href: "mailto:hello@scriptvalley.com", label: "Email"   },
               ].map(({ icon: Icon, href, label }) => (

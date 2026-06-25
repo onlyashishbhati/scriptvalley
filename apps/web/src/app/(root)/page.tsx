@@ -7,6 +7,7 @@ import Hero from "./_sections/Hero";
 import { KeyboardWithPreview } from "./_sections/Keyboard";
 import AnimatedHero from "./_components/AnimatedHero";
 import Preloader from "./_components/Preloader";
+import Footer from "../../components/Footer";
 
 export default function Home() {
   const [showLoader, setShowLoader] = useState(false);
@@ -40,6 +41,7 @@ export default function Home() {
             <Hero />
             <KeyboardWithPreview />
             <AnimatedHero />
+            <Footer />
           </div>
         </ReactLenis>
       </motion.div>

@@ -78,7 +78,7 @@ export default function RootLayout({
           />
         </head>
         <body
-          className={`${inter.variable} antialiased min-h-screen flex flex-col`}
+          className={`${inter.variable} antialiased min-h-screen flex flex-col mb-14`}
           style={{
             fontFamily:      "var(--font-inter), var(--font-sans)",
             backgroundColor: "var(--bg-base)",
@@ -86,13 +86,10 @@ export default function RootLayout({
           }}
         >
           <ConvexClientProvider>
-            {/* ↓ AuthModalProvider must wrap everything so useAuthModal()
-                works in Navbar, course cards, DSA sheets — anywhere */}
             <AuthModalProvider>
               <UserSyncProvider />
               <SiteChrome>{children}</SiteChrome>
 
-              {/* ↓ Renders the modal portal — must be inside AuthModalProvider */}
               <AuthModal />
             </AuthModalProvider>
           </ConvexClientProvider>
