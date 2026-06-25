@@ -126,7 +126,7 @@ export default function NotFound() {
             className="sv404-fade mt-3 max-w-md text-sm leading-relaxed text-[var(--text-muted)]"
             style={{ animationDelay: "120ms" }}
           >
-            It's not part of any sheet, snippet, or course here. It may have been moved, renamed, or the link was mistyped.
+            It&apos;s not part of any sheet, snippet, or course here. It may have been moved, renamed, or the link was mistyped.
           </p>
 
           {/* Search bar — matches DSA Sheets page styling */}

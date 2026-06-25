@@ -2,7 +2,6 @@
 
 import { usePathname } from "next/navigation";
 import { DockWrapper } from "./DockWrapper";
-import Footer from "./Footer";
 import Navbar from "./Navbar";
 import AnnouncementBanner from "../app/dev-profile/_components/AnnouncementBanner";
 
@@ -20,7 +19,6 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
       <AnnouncementBanner />
       {children}
       <DockWrapper />
-      {/* <Footer /> */}
     </>
   );
 }
