@@ -30,6 +30,14 @@ export default function DSASheetPage() {
 
   const recordAttempt = useMutation(api.progress.recordAttempt);
   const attempts      = useQuery(api.progress.getAttempts, user ? { userId } : "skip");
+
+  // PERF: single sheet-wide starred query instead of one per QuestionRow.
+  const starredQuestions = useQuery(
+    api.starred.getStarredByUser,
+    user ? { userId } : "skip",
+  ) ?? [];
+  const starredSet = new Set(starredQuestions.map((s: { questionTitle: string }) => s.questionTitle));
+
   const { getNotes, updateNotes, isSaving } = useNotes();
 
   const handleNotesUpdate = async (_topic: string, _questionTitle: string, notes: string) => {
@@ -113,6 +121,7 @@ export default function DSASheetPage() {
                 isSaving={isSaving}
                 getNotes={getNotes}
                 isLoggedIn={isLoggedIn}
+                starredSet={starredSet}
               />
             ))}
           </div>

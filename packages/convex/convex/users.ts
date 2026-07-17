@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { requireAdmin } from "./_helper";
 
 function sanitizeString(s: unknown): string {
   if (typeof s !== "string") return "";
@@ -27,9 +28,13 @@ function isValidUsername(username: string): boolean {
   return /^[a-z0-9][a-z0-9_-]{1,18}[a-z0-9]$/.test(username);
 }
 
-// ─── Existing mutations / queries (unchanged) ─────────────────────────────────
+// ─── Existing mutations / queries ─────────────────────────────────────────────
 
 // Called by the Clerk webhook on user.created and by UserSyncProvider on sign in.
+// The webhook calls this via ctx.runMutation from an httpAction, which carries
+// no Clerk identity — so we only enforce the identity check when one IS present
+// (i.e. a live client call), to prevent a signed-in user from overwriting
+// another user's profile row while still allowing the webhook's system call.
 export const syncUser = mutation({
   args: {
     userId: v.string(),
@@ -38,6 +43,11 @@ export const syncUser = mutation({
     role:   v.optional(v.string()),
   },
   handler: async (ctx, { userId, email, name, role }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (identity && identity.subject !== userId) {
+      throw new Error("Unauthorized");
+    }
+
     const existing = await ctx.db
       .query("users")
       .withIndex("by_user_id", (q) => q.eq("userId", userId))
@@ -70,11 +80,17 @@ export const syncUser = mutation({
 });
 
 // Fetch a single user by their Clerk userId.
+// Restricted to the owning user — this row includes phone/email/banned/flagged
+// fields that shouldn't be readable by arbitrary callers.
 export const getUser = query({
   args: { userId: v.string() },
   handler: async (ctx, { userId }) => {
     const uid = sanitizeString(userId);
     if (!uid) return null;
+
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== uid) return null;
+
     return await ctx.db
       .query("users")
       .withIndex("by_user_id", (q) => q.eq("userId", uid))
@@ -104,6 +120,10 @@ export const updateBasicInfo = mutation({
     const country     = sanitizeString(args.country     ?? "");
 
     if (!userId)                    throw new Error("Missing userId");
+
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== userId) throw new Error("Unauthorized");
+
     if (!isReasonableName(name))    throw new Error("Invalid name");
     if (!isValidEmail(email))       throw new Error("Invalid email");
     if (!isValidPhone(phoneNumber)) throw new Error("Invalid phone number");
@@ -143,9 +163,13 @@ export const updateBasicInfo = mutation({
 });
 
 // Full-text search over name + email — used in the admin user search.
+// This exposes name/email for every user matching the query, so it must be
+// admin-gated (it previously had no authorization check at all).
 export const searchUsers = query({
   args: { q: v.string() },
   handler: async (ctx, { q }) => {
+    await requireAdmin(ctx.db, ctx.auth);
+
     const lower = q.toLowerCase();
     const users = await ctx.db.query("users").collect();
     return users
@@ -158,7 +182,7 @@ export const searchUsers = query({
   },
 });
 
-// ─── Mini-Portfolio mutations / queries (NEW) ─────────────────────────────────
+// ─── Mini-Portfolio mutations / queries ───────────────────────────────────────
 
 /**
  * setUsername
@@ -179,6 +203,9 @@ export const setUsername = mutation({
     const slug = sanitizeString(username).toLowerCase();
 
     if (!uid) throw new Error("Missing userId");
+
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== uid) throw new Error("Unauthorized");
 
     const user = await ctx.db
       .query("users")
@@ -253,6 +280,9 @@ export const setProfileVisibility = mutation({
   handler: async (ctx, { userId, visibility }) => {
     const uid = sanitizeString(userId);
     if (!uid) throw new Error("Missing userId");
+
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== uid) throw new Error("Unauthorized");
 
     const user = await ctx.db
       .query("users")

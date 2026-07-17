@@ -1,4 +1,3 @@
-// HTTP actions — currently just the Clerk webhook for syncing new users.
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { Webhook } from "svix";
@@ -41,7 +40,9 @@ http.route({
 
     if (evt.type === "user.created") {
       const { id, email_addresses, first_name, last_name } = evt.data;
-      const email = email_addresses[0].email_address;
+      // Defensive: some Clerk payloads (e.g. OAuth without a verified email)
+      // can arrive with an empty email_addresses array — don't crash the webhook.
+      const email = email_addresses?.[0]?.email_address ?? "";
       const name  = `${first_name || ""} ${last_name || ""}`.trim();
 
       try {

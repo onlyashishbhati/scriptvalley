@@ -133,8 +133,7 @@ export const useCodeEditorStore = create<CodeEditorState>((set, get) => {
           });
           return;
         }
-
-        const output = data.run.output;
+        const output = data.run?.output ?? "";
         set({
           output: output.trim(),
           error: null,

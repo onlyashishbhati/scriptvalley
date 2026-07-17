@@ -1,7 +1,7 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../../packages/convex/convex/_generated/api";
 import { useMemo, useState } from "react";
 import { Star, X } from "lucide-react";
@@ -48,9 +48,13 @@ function StarredContent() {
   const starred  = useQuery(api.starred.getStarredByUser, userId ? { userId } : "skip");
   const sheets   = useQuery(api.sheets.getAll) as Sheet[] | undefined;
   const attempts = useQuery(api.progress.getAttempts, userId ? { userId } : "skip");
+  const recordAttempt = useMutation(api.progress.recordAttempt);
 
   const [sheetFilter, setSheetFilter] = useState("All");
   const [topicFilter, setTopicFilter] = useState("All");
+  // Optimistic local overrides for the attempted checkbox on this page —
+  // mirrors the pattern used on the sheet detail page.
+  const [localAttempts, setLocalAttempts] = useState<Record<string, boolean>>({});
 
   const enriched = useMemo<EnrichedStarred[]>(() => {
     if (!starred || !sheets) return [];
@@ -86,6 +90,32 @@ function StarredContent() {
         : enriched.filter((q) => q.sheetSlug === sheetFilter).map((q) => q.topic),
     ),
   ];
+
+  // BUG FIX: this handler previously ignored the checkbox event entirely and
+  // just showed a "Progress updated" toast without ever calling
+  // recordAttempt — so the checkbox looked interactive but silently did
+  // nothing, while telling the user it worked. Wired it to actually persist
+  // the attempt, same as the sheet detail page.
+  async function handleToggle(
+    e: React.ChangeEvent<HTMLInputElement>,
+    item: EnrichedStarred,
+  ) {
+    const attempted = e.target.checked;
+    setLocalAttempts((prev) => ({ ...prev, [item.question.title]: attempted }));
+    try {
+      await recordAttempt({
+        userId,
+        questionTitle: item.question.title,
+        sheetSlug: item.sheetSlug,
+        difficulty: item.question.difficulty,
+        attempted,
+      });
+      toast.success("Progress updated");
+    } catch (err) {
+      console.error("recordAttempt failed", err);
+      toast.error("Failed to update progress");
+    }
+  }
 
   if (!isLoaded || (user && (!starred || !sheets))) {
     return <StarredPageSkeleton />;
@@ -226,7 +256,8 @@ function StarredContent() {
               </div>
               {filtered.map((item, i) => {
                 const attempted =
-                  attempts?.find((a: Attempt) => a.questionTitle === item.question.title)?.attempted ?? false;
+                  localAttempts[item.question.title] ??
+                  (attempts?.find((a: Attempt) => a.questionTitle === item.question.title)?.attempted ?? false);
                 return (
                   <QuestionRow
                     key={item._id}
@@ -236,7 +267,10 @@ function StarredContent() {
                     isLoggedIn={true}
                     isLast={i === filtered.length - 1}
                     attempted={attempted}
-                    handleToggle={() => toast.success("Progress updated")}
+                    // This page shows only starred questions, so every row
+                    // here is, by definition, starred.
+                    isStarred={true}
+                    handleToggle={(e) => handleToggle(e, item)}
                   />
                 );
               })}

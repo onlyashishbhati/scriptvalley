@@ -1,5 +1,3 @@
-// DSA attempt tracking and sheet follow/save state.
-// recordAttempt is the main function here — it writes to attempts + sheet_progress.
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { upsertSheetProgress } from "./_helper";
@@ -7,6 +5,9 @@ import { upsertSheetProgress } from "./_helper";
 export const getAttempts = query({
   args: { userId: v.string() },
   handler: async (ctx, { userId }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== userId) return [];
+
     return await ctx.db
       .query("attempts")
       .withIndex("by_user_question", (q: any) => q.eq("userId", userId))
@@ -18,6 +19,9 @@ export const getAttempts = query({
 export const getAllAttempts = query({
   args: { userId: v.string() },
   handler: async (ctx, { userId }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== userId) return [];
+
     return await ctx.db
       .query("attempts")
       .withIndex("by_user_question", (q: any) => q.eq("userId", userId))
@@ -28,6 +32,9 @@ export const getAllAttempts = query({
 export const toggleFollow = mutation({
   args: { userId: v.string(), sheetSlug: v.string(), follow: v.boolean() },
   handler: async (ctx, { userId, sheetSlug, follow }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== userId) throw new Error("Unauthorized");
+
     const existing = await ctx.db
       .query("user_sheet_follow")
       .withIndex("by_user_sheet", (q: any) =>
@@ -52,6 +59,9 @@ export const toggleFollow = mutation({
 export const getFollowedSheets = query({
   args: { userId: v.string() },
   handler: async (ctx, { userId }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== userId) return [];
+
     const follows = await ctx.db
       .query("user_sheet_follow")
       .withIndex("by_user", (q: any) => q.eq("userId", userId))
@@ -91,6 +101,9 @@ export const recordAttempt = mutation({
     attempted:     v.boolean(),
   },
   handler: async (ctx, { userId, questionTitle, sheetSlug, difficulty, attempted }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== userId) throw new Error("Unauthorized");
+
     const existing = await ctx.db
       .query("attempts")
       .withIndex("by_user_question", (q: any) =>

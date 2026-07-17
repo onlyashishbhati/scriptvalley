@@ -37,8 +37,7 @@ export function useNotes(): UseNotesReturn {
     api.notes.getAllNotes,
     user ? { userId: user.id } : "skip"
   ) as NotesData | undefined;
-
-  const isLoading = allUserNotes === undefined;
+  const isLoading = user ? allUserNotes === undefined : false;
 
   useEffect(() => {
     if (allUserNotes) {

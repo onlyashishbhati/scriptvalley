@@ -7,6 +7,13 @@ const CACHE_TTL_MS = Number(process.env.LEETSCAN_TTL || 60) * 1000;
 type CacheEntry = { ts: number; data: unknown };
 const MEM_CACHE = new Map<string, CacheEntry>();
 
+function pruneExpiredCache() {
+  const now = Date.now();
+  for (const [key, entry] of MEM_CACHE) {
+    if (now - entry.ts >= CACHE_TTL_MS) MEM_CACHE.delete(key);
+  }
+}
+
 async function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
@@ -63,6 +70,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Invalid LeetCode username input" }, { status: 400 });
     }
 
+    pruneExpiredCache();
     const cacheKey = `leetscan:${username}`;
 
     // cache check

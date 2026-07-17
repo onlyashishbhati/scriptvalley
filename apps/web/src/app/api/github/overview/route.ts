@@ -3,6 +3,17 @@ import { NextResponse } from "next/server";
 const GITHUB_API = "https://api.github.com/graphql";
 const TOKEN = process.env.GITHUB_TOKEN;
 
+const CACHE_TTL_MS = Number(process.env.GITHUB_STATS_TTL || 300) * 1000;
+type CacheEntry = { ts: number; data: unknown };
+const MEM_CACHE = new Map<string, CacheEntry>();
+
+function pruneExpiredCache() {
+  const now = Date.now();
+  for (const [key, entry] of MEM_CACHE) {
+    if (now - entry.ts >= CACHE_TTL_MS) MEM_CACHE.delete(key);
+  }
+}
+
 type LangEdge = { size: number; node: { name: string; color?: string | null } };
 
 type RepoNode = {
@@ -138,6 +149,13 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Invalid ?user parameter" }, { status: 400 });
     }
 
+    pruneExpiredCache();
+    const cacheKey = `github:${login}`;
+    const cached = MEM_CACHE.get(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached.data, { status: 200 });
+    }
+
     let after: string | null = null;
     let hasNext = true;
 
@@ -251,6 +269,7 @@ export async function GET(req: Request) {
       weeks,
     };
 
+    MEM_CACHE.set(cacheKey, { ts: Date.now(), data: payload });
     return NextResponse.json(payload, { status: 200 });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e ?? "Failed");

@@ -269,6 +269,37 @@ export const getLessonProgress = query({
   },
 });
 
+// PERF: batched version of getLessonProgress for a list of course slugs.
+// Added specifically to fix the course listing page (CourseCard.tsx), which
+// previously ran one live getLessonProgress subscription PER in-progress
+// course card — N live queries on one page instead of one. This single
+// query uses the same "by_user_course" index but only constrains on userId
+// (a valid index-prefix query), then groups the results by course slug in
+// memory. At 10k MAU, one user's total lesson_progress row count is small,
+// so this stays cheap while cutting N subscriptions down to 1.
+export const getLessonProgressForSlugs = query({
+  args: { courseSlugs: v.array(v.string()) },
+  handler: async (ctx, { courseSlugs }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || courseSlugs.length === 0) return {};
+
+    const userId  = identity.subject;
+    const slugSet = new Set(courseSlugs);
+
+    const rows = await ctx.db
+      .query("lesson_progress")
+      .withIndex("by_user_course", (q) => q.eq("userId", userId))
+      .collect();
+
+    const grouped: Record<string, { moduleSlug: string; lessonSlug: string }[]> = {};
+    for (const r of rows) {
+      if (!slugSet.has(r.courseSlug)) continue;
+      (grouped[r.courseSlug] ??= []).push({ moduleSlug: r.moduleSlug, lessonSlug: r.lessonSlug });
+    }
+    return grouped;
+  },
+});
+
 // Idempotent — safe to call multiple times for the same lesson.
 export const markLessonComplete = mutation({
   args: { courseSlug: v.string(), moduleSlug: v.string(), lessonSlug: v.string() },
@@ -340,7 +371,7 @@ export const getAllLessonProgressCounts = query({
     const userId = identity.subject;
     const rows = await ctx.db
       .query("lesson_progress")
-      .filter((q) => q.eq(q.field("userId"), userId))
+      .withIndex("by_user_course", (q) => q.eq("userId", userId))
       .collect();
     const counts: Record<string, number> = {};
     for (const row of rows) {

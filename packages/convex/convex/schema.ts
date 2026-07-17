@@ -175,7 +175,10 @@ export default defineSchema({
     isPrivate: v.boolean(),
   })
     .index("by_user_id", ["userId"])
-    .index("by_user_id_and_privacy", ["userId", "isPrivate"]),
+    .index("by_user_id_and_privacy", ["userId", "isPrivate"])
+    // Supports the public snippet feed (getSnippets) without a full-table
+    // scan-and-filter as the table grows.
+    .index("by_privacy", ["isPrivate"]),
 
   snippetComments: defineTable({
     snippetId: v.id("snippets"),

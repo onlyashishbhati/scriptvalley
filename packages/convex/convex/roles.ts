@@ -1,6 +1,6 @@
-// Sets a user's role and keeps the admins table in sync when role = "admin".
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { requireAdmin } from "./_helper";
 
 export const setUserRole = mutation({
   args: {
@@ -8,6 +8,11 @@ export const setUserRole = mutation({
     role:         v.optional(v.string()),
   },
   handler: async ({ db, auth }, { targetUserId, role }) => {
+    // This mutation can grant real admin privileges (it writes to the admins
+    // table), so it must itself be admin-gated — previously it had no
+    // authorization check at all.
+    await requireAdmin(db, auth);
+
     const now = new Date().toISOString();
 
     const existingUser = await db

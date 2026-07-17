@@ -1,5 +1,3 @@
-// Admin-only queries and mutations for the new admin panel features.
-// Covers: platform stats, user management (ban/flag), and announcement system.
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { requireAdmin } from "./_helper";
@@ -90,8 +88,8 @@ export const adminGetUserDetail = query({
     if (!user) return null;
 
     const [sheetProgress, lessonProgress, potdLogs] = await Promise.all([
-      ctx.db.query("sheet_progress").filter((q: any) => q.eq(q.field("userId"), userId)).collect(),
-      ctx.db.query("lesson_progress").filter((q: any) => q.eq(q.field("userId"), userId)).collect(),
+      ctx.db.query("sheet_progress").withIndex("by_user_sheet", (q: any) => q.eq("userId", userId)).collect(),
+      ctx.db.query("lesson_progress").withIndex("by_user_course", (q: any) => q.eq("userId", userId)).collect(),
       ctx.db.query("potdLogs").withIndex("by_user", (q: any) => q.eq("userId", userId)).collect(),
     ]);
 
@@ -200,11 +198,12 @@ export const deleteAnnouncement = mutation({
 export const getActiveAnnouncements = query({
   handler: async (ctx) => {
     try {
-      const rows = await (ctx.db as any).query("announcements").collect();
+      const rows = await (ctx.db as any)
+        .query("announcements")
+        .withIndex("by_active", (q: any) => q.eq("active", true))
+        .collect();
       const now = Date.now();
-      return (rows as any[]).filter(
-        (a) => a.active && (!a.expiresAt || a.expiresAt > now)
-      );
+      return (rows as any[]).filter((a) => !a.expiresAt || a.expiresAt > now);
     } catch {
       return [];
     }

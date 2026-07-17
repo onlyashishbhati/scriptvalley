@@ -18,9 +18,14 @@ export default function ShareButton({ snippetId }: Props) {
   }, [snippetId]);
 
   const copyUrl = async () => {
-    await navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard API blocked — same fix as CopyButton.tsx: avoid an
+      // unhandled promise rejection when writeText() fails.
+    }
   };
 
   return (

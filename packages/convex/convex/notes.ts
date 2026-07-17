@@ -1,4 +1,3 @@
-// Per-question notes for students. Deletes the row when the note is cleared.
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
@@ -10,6 +9,9 @@ export const upsertNote = mutation({
     notes:         v.string(),
   },
   handler: async (ctx, { userId, questionTitle, notes }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== userId) throw new Error("Unauthorized");
+
     const existing = await ctx.db
       .query("questionNotes")
       .withIndex("by_user_question", (q) =>
@@ -45,6 +47,9 @@ export const upsertNote = mutation({
 export const getNote = query({
   args: { userId: v.string(), questionTitle: v.string() },
   handler: async (ctx, { userId, questionTitle }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== userId) return "";
+
     const note = await ctx.db
       .query("questionNotes")
       .withIndex("by_user_question", (q) =>
@@ -59,6 +64,9 @@ export const getNote = query({
 export const getAllNotes = query({
   args: { userId: v.string() },
   handler: async (ctx, { userId }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== userId) return {};
+
     const notes = await ctx.db
       .query("questionNotes")
       .withIndex("by_user_question", (q) => q.eq("userId", userId))
@@ -73,6 +81,9 @@ export const getAllNotes = query({
 export const deleteNote = mutation({
   args: { userId: v.string(), questionTitle: v.string() },
   handler: async (ctx, { userId, questionTitle }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== userId) throw new Error("Unauthorized");
+
     const note = await ctx.db
       .query("questionNotes")
       .withIndex("by_user_question", (q) =>
@@ -87,6 +98,9 @@ export const deleteNote = mutation({
 export const getNotesCount = query({
   args: { userId: v.string() },
   handler: async (ctx, { userId }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== userId) return 0;
+
     const notes = await ctx.db
       .query("questionNotes")
       .withIndex("by_user_question", (q) => q.eq("userId", userId))
@@ -99,6 +113,9 @@ export const getNotesCount = query({
 export const getAllUserNotes = query({
   args: { userId: v.string() },
   handler: async (ctx, { userId }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== userId) return [];
+
     const notes = await ctx.db
       .query("questionNotes")
       .withIndex("by_user", (q) => q.eq("userId", userId))

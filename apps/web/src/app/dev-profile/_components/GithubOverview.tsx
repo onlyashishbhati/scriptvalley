@@ -17,6 +17,7 @@ type Overview = {
   languages: { name: string; color: string; percent: number }[];
   weeks: { contributionDays: { contributionCount: number; date: string }[] }[];
 };
+const POLL_INTERVAL_MS = 5 * 60 * 1000;
 
 export default function GitHubOverview() {
   const { user }  = useUser();
@@ -62,7 +63,7 @@ export default function GitHubOverview() {
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
     if (!ghHandle) { setData(null); setError(null); return; }
     fetchOverview(ghHandle);
-    pollRef.current = window.setInterval(() => fetchOverview(ghHandle), 30_000);
+    pollRef.current = window.setInterval(() => fetchOverview(ghHandle), POLL_INTERVAL_MS);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [ghHandle]);
 

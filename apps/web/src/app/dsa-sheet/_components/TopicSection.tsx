@@ -48,6 +48,9 @@ interface TopicSectionProps {
   onNotesUpdate: (topic: string, questionTitle: string, notes: string) => Promise<void>;
   isSaving:      boolean;
   getNotes:      (questionTitle: string) => string | undefined;
+  // PERF: whole-sheet starred set, fetched once by the page (getStarredByUser)
+  // and threaded down here instead of each QuestionRow subscribing individually.
+  starredSet:    Set<string>;
 }
 
 // ─── Sub-topic accordion (used inside a topic when useSubTopics = true) ────────
@@ -61,6 +64,7 @@ function SubTopicAccordion({
   handleToggle,
   sheetId,
   isLoggedIn,
+  starredSet,
 }: {
   subTopic:      SubTopic;
   topicName:     string;
@@ -70,6 +74,7 @@ function SubTopicAccordion({
   handleToggle:  TopicSectionProps["handleToggle"];
   sheetId:       string;
   isLoggedIn:    boolean;
+  starredSet:    Set<string>;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -150,6 +155,7 @@ function SubTopicAccordion({
                     sheetId={sheetId}
                     isLoggedIn={isLoggedIn}
                     isLast={i === filteredQuestions.length - 1}
+                    isStarred={starredSet.has(q.title)}
                     attempted={
                       localAttempts[`${topicName}_${q.title}`] ??
                       attempts.find((a) => a.questionTitle === q.title)?.attempted ??
@@ -186,6 +192,7 @@ export default function TopicSection({
   filter,
   sheetId,
   isLoggedIn,
+  starredSet,
 }: TopicSectionProps) {
 
   // ── Flat mode counts ──────────────────────────────────────────────────────
@@ -283,6 +290,7 @@ export default function TopicSection({
                       handleToggle={handleToggle}
                       sheetId={sheetId}
                       isLoggedIn={isLoggedIn}
+                      starredSet={starredSet}
                     />
                   ))
                 )}
@@ -298,6 +306,7 @@ export default function TopicSection({
                     sheetId={sheetId}
                     isLoggedIn={isLoggedIn}
                     isLast={i === flatFiltered.length - 1}
+                    isStarred={starredSet.has(q.title)}
                     attempted={
                       localAttempts[`${topic.topic}_${q.title}`] ??
                       attempts.find((a) => a.questionTitle === q.title)?.attempted ??

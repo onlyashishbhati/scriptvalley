@@ -46,9 +46,18 @@ function SnippetsPage() {
 
   const activePosition = buttonPositions[activeFilter] || { left: 0, width: 0 };
 
-  const publicSnippets  = useQuery(api.snippets.getSnippets);
-  const privateSnippets = useQuery(api.snippets.getPrivateSnippets, {});
-  const userSnippets    = useQuery(api.snippets.getUserSnippets, {});
+  const publicSnippets = useQuery(
+    api.snippets.getSnippets,
+    activeFilter === "public" ? {} : "skip",
+  );
+  const privateSnippets = useQuery(
+    api.snippets.getPrivateSnippets,
+    activeFilter === "private" && user ? {} : "skip",
+  );
+  const userSnippets = useQuery(
+    api.snippets.getUserSnippets,
+    activeFilter === "my-snippets" && user ? {} : "skip",
+  );
 
   const getCurrentSnippets = () => {
     switch (activeFilter) {
@@ -61,7 +70,12 @@ function SnippetsPage() {
 
   const snippets = getCurrentSnippets();
 
-  if (snippets === undefined) return <div className="min-h-screen"><SnippetsPageSkeleton /></div>;
+  const currentQueryResult =
+    activeFilter === "public" ? publicSnippets :
+    activeFilter === "private" ? privateSnippets :
+    userSnippets;
+
+  if (currentQueryResult === undefined) return <div className="min-h-screen"><SnippetsPageSkeleton /></div>;
 
   const languages = [...new Set(snippets.map((s) => s.language))];
   const popularLanguages = languages.slice(0, 5);

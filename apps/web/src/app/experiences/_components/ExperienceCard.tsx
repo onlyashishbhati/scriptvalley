@@ -81,9 +81,12 @@ function ShareMenu({ slug, company, role }: { slug: string; company: string; rol
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
-
-  const copyLink = () => {
-    navigator.clipboard.writeText(url);
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      // Clipboard API blocked — no-op, menu still closes below.
+    }
     setOpen(false);
   };
 

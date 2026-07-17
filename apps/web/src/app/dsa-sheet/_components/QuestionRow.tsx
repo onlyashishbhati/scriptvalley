@@ -7,7 +7,7 @@ import NotesModal from "./NotesModal";
 import { useNotes } from "@/hooks/useNotes";
 import toast from "react-hot-toast";
 import { useUser } from "@clerk/nextjs";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
 import { api } from "../../../../../../packages/convex/convex/_generated/api";
 
 interface Question {
@@ -24,6 +24,7 @@ interface QuestionRowProps {
   sheetId:      string;
   topic:        string;
   isLoggedIn:   boolean;
+  isStarred:    boolean;
 }
 
 const DIFF_STYLE: Record<string, string> = {
@@ -73,7 +74,7 @@ function PlatformIcon({ platform }: { platform?: string }) {
 }
 
 export default function QuestionRow({
-  question, attempted, handleToggle, sheetId, topic, isLoggedIn,
+  question, attempted, handleToggle, sheetId, topic, isLoggedIn, isStarred,
 }: QuestionRowProps) {
   const [isModalOpen, setModalOpen] = useState(false);
   const { getNotes, updateNotes, deleteNotes, isSaving } = useNotes();
@@ -81,11 +82,6 @@ export default function QuestionRow({
 
   const { user } = useUser();
   const userId   = user?.id ?? "";
-
-  const isStarred = useQuery(
-    api.starred.isStarred,
-    isLoggedIn && userId ? { userId, questionTitle: question.title } : "skip",
-  ) ?? false;
 
   const toggleStar = useMutation(api.starred.toggleStar);
 

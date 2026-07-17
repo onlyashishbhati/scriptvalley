@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { Layers, FileText, Bookmark, BookmarkCheck, PlayCircle } from "lucide-react";
 import { motion } from "framer-motion";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
 import { api } from "../../../../../../packages/convex/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
 import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 import { Course } from "../courseTypes";
 
 const LEVEL_META: Record<string, { label: string; color: string; bg: string }> = {
@@ -27,10 +28,12 @@ interface Props {
   course:            Course;
   isSaved:           boolean;
   completedLessons?: number;
+  progressRows?: { moduleSlug: string; lessonSlug: string }[];
 }
 
-export default function CourseCard({ course, isSaved, completedLessons = 0 }: Props) {
+export default function CourseCard({ course, isSaved, completedLessons = 0, progressRows }: Props) {
   const { user }      = useUser();
+  const router        = useRouter();
   const toggleSaveMut = useMutation(api.courses.saveOrUnsaveCourse);
 
   const moduleCount  = course.modules?.length ?? 0;
@@ -45,11 +48,6 @@ export default function CourseCard({ course, isSaved, completedLessons = 0 }: Pr
     : 0;
 
   const hasStarted = isStructured && completedLessons > 0 && completedLessons < totalLessons;
-
-  const progressRows = useQuery(
-    api.courses.getLessonProgress,
-    user && hasStarted ? { courseSlug: course.slug } : "skip",
-  ) as { moduleSlug: string; lessonSlug: string }[] | undefined;
 
   const completedSet = new Set(
     (progressRows ?? []).map((r) => `${r.moduleSlug}::${r.lessonSlug}`)
@@ -86,6 +84,20 @@ export default function CourseCard({ course, isSaved, completedLessons = 0 }: Pr
     } catch {
       toast.error("Something went wrong");
     }
+  }
+
+  // BUG FIX: this "Continue" control was a <Link> (renders <a>) nested
+  // inside the card's outer <Link> (also an <a>) — the browser silently
+  // closes the outer anchor early and React then hydrates a mismatched
+  // tree, which is exactly the "<a> cannot be a descendant of <a>"
+  // hydration error. Nested interactive anchors are invalid HTML
+  // regardless of framework. Fixed by using a plain <button> that
+  // stops propagation and navigates imperatively via useRouter — same
+  // click behavior, no invalid nesting.
+  function goToResume(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (resumeHref) router.push(resumeHref);
   }
 
   return (
@@ -167,16 +179,17 @@ export default function CourseCard({ course, isSaved, completedLessons = 0 }: Pr
               {/* Action buttons */}
               <div className="flex items-center gap-1" onClick={(e) => e.preventDefault()}>
 
-                {/* Continue button — shows only when in progress */}
+                {/* Continue button — shows only when in progress. Plain
+                    <button>, not <Link>, to avoid an <a> nested inside the
+                    card's outer <Link>'s <a>. */}
                 {resumeHref && (
-                  <Link
-                    href={resumeHref}
-                    onClick={(e) => e.stopPropagation()}
+                  <button
+                    onClick={goToResume}
                     className="flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors duration-100 text-[#3A5EFF] bg-[rgba(58,94,255,0.08)] hover:bg-[rgba(58,94,255,0.14)]"
                   >
                     <PlayCircle className="w-3 h-3" />
                     <span>Continue</span>
-                  </Link>
+                  </button>
                 )}
 
                 {/* Save button */}

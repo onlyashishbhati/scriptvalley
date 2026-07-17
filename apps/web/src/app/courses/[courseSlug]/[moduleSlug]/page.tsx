@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { api } from "../../../../../../../packages/convex/convex/_generated/api";
 import { fetchQuery } from "convex/nextjs";
 import { notFound, redirect } from "next/navigation";
@@ -7,12 +8,13 @@ import { Course } from "../../courseTypes";
 interface Props {
   params: Promise<{ courseSlug: string; moduleSlug: string }>;
 }
+const getCourse = cache(async (slug: string) => {
+  return (await fetchQuery(api.courses.getCourseBySlug, { slug })) as Course | null;
+});
 
 export async function generateMetadata({ params }: Props) {
   const { courseSlug, moduleSlug } = await params;
-  const course = (await fetchQuery(api.courses.getCourseBySlug, {
-    slug: courseSlug,
-  })) as Course | null;
+  const course = await getCourse(courseSlug);
   const mod = course?.modules?.find((m) => m.slug === moduleSlug);
   return { title: mod ? `${mod.title} — ${course!.title}` : "Course" };
 }
@@ -20,9 +22,7 @@ export async function generateMetadata({ params }: Props) {
 export default async function ModulePage({ params }: Props) {
   const { courseSlug, moduleSlug } = await params;
 
-  const course = (await fetchQuery(api.courses.getCourseBySlug, {
-    slug: courseSlug,
-  })) as Course | null;
+  const course = await getCourse(courseSlug);
   if (!course) notFound();
 
   const isStructured = course.template === "structured";

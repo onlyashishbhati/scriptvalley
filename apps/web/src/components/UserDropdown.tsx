@@ -7,6 +7,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, LogOut, Sun, Moon, ChevronDown, LayoutDashboard, BookOpen } from "lucide-react";
 import { useAuthModal } from "@/components/providers/AuthModalProvider";
+import { useTheme } from "@/hooks/useTheme";
 
 interface Props {
   variant?:     "student" | "instructor" | "admin";
@@ -26,21 +27,15 @@ export default function UserDropdown({
   const { user, isLoaded } = useUser();
   const { signOut }        = useClerk();
   const { openSignIn }     = useAuthModal();
+  // Reuse the shared theme hook instead of re-implementing dark-mode
+  // detection + localStorage handling here — keeps the "sv-theme" key and
+  // toggle behavior in exactly one place instead of two that could drift.
+  const { isDark: dark, toggle: toggleTheme } = useTheme();
 
   const [open, setOpen]     = useState(false);
-  const [dark, setDark]     = useState(false);
   const [pos,  setPos]      = useState<DropdownPos>({});
   const [dropUp, setDropUp] = useState(false);
   const triggerRef          = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setDark(document.documentElement.classList.contains("dark"));
-    const obs = new MutationObserver(() =>
-      setDark(document.documentElement.classList.contains("dark"))
-    );
-    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    return () => obs.disconnect();
-  }, []);
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -88,13 +83,6 @@ export default function UserDropdown({
 
     setPos(newPos);
   }, [open]);
-
-  function toggleTheme() {
-    const next = !dark;
-    setDark(next);
-    document.documentElement.classList.toggle("dark", next);
-    localStorage.setItem("sv-theme", next ? "dark" : "light");
-  }
 
   async function handleSignOut() {
     setOpen(false);

@@ -1,4 +1,3 @@
-// Social links (LinkedIn, Twitter, portfolio, resume) for a user's profile.
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
@@ -22,6 +21,10 @@ export const getUserSocialLinks = query({
   handler: async (ctx, args) => {
     const userId = sanitizeString(args.userId);
     if (!userId) return null;
+
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== userId) return null;
+
     return await ctx.db
       .query("socials")
       .withIndex("by_user_id", (q: any) => q.eq("userId", userId))
@@ -41,6 +44,9 @@ export const updateSocialLinks = mutation({
   handler: async (ctx, args) => {
     const userId    = sanitizeString(args.userId);
     if (!userId) throw new Error("Missing userId");
+
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== userId) throw new Error("Unauthorized");
 
     const linkedin  = sanitizeString(args.linkedin  ?? "");
     const twitter   = sanitizeString(args.twitter   ?? "");

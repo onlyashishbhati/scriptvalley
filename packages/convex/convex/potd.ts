@@ -1,5 +1,3 @@
-// Problem of the Day — picks a personalized question for the user each day
-// and tracks their solve streak via potdLogs.
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { upsertSheetProgress } from "./_helper";
@@ -87,6 +85,10 @@ export const getPersonalizedPotd = query({
   args: { userId: v.string() },
   handler: async (ctx, { userId }) => {
     if (!userId) return null;
+
+    // Only the owning user can request their own personalized POTD.
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== userId) return null;
 
     const date       = todayKey();
     const followRows = await ctx.db
@@ -181,6 +183,10 @@ export const isSolvedToday = query({
   args: { userId: v.string() },
   handler: async (ctx, { userId }) => {
     if (!userId) return false;
+
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== userId) return false;
+
     const log = await ctx.db
       .query("potdLogs")
       .withIndex("by_user_date", (q: any) =>
@@ -204,6 +210,9 @@ export const markSolvedToday = mutation({
   },
   handler: async (ctx, { userId, questionTitle, sheetSlug, difficulty, solved }) => {
     if (!userId) throw new Error("userId required");
+
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== userId) throw new Error("Unauthorized");
 
     const date = todayKey();
 
@@ -262,6 +271,11 @@ export const getStreakData = query({
   args: { userId: v.string() },
   handler: async (ctx, { userId }) => {
     if (!userId) return { currentStreak: 0, longestStreak: 0, totalSolved: 0, solvedDays: [] };
+
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== userId) {
+      return { currentStreak: 0, longestStreak: 0, totalSolved: 0, solvedDays: [] };
+    }
 
     const logs = await ctx.db
       .query("potdLogs")

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useMemo } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import { api } from "../../../../../packages/convex/convex/_generated/api";
@@ -13,6 +13,7 @@ import { Course } from "./courseTypes";
 type SavedCourse = { courseSlug: string };
 type BtnPos      = { left: number; width: number };
 type FilterKey   = "all" | "saved";
+type ProgressRow = { moduleSlug: string; lessonSlug: string };
 
 export default function CoursesPage() {
   const { user }   = useUser();
@@ -20,6 +21,28 @@ export default function CoursesPage() {
   const courses      = useQuery(api.courses.getAllCourses) as Course[] | undefined;
   const savedCourses     = useQuery(api.courses.getSavedCourses) ?? [];
   const progressCounts  = useQuery(api.courses.getAllLessonProgressCounts) ?? {};
+
+  // PERF: figure out which visible courses are "in progress" (some but not
+  // all lessons done) — those are the only ones that need per-lesson
+  // progress rows for the "Continue" deep link. Then fetch all of them in
+  // ONE batched query instead of letting each CourseCard open its own
+  // subscription (see api.courses.getLessonProgressForSlugs).
+  const inProgressSlugs = useMemo(() => {
+    if (!courses) return [];
+    return courses
+      .filter((c) => {
+        if (c.template !== "structured") return false;
+        const total = (c.modules ?? []).reduce((s, m) => s + (m.lessons?.length ?? 0), 0);
+        const done  = (progressCounts as Record<string, number>)[c.slug] ?? 0;
+        return total > 0 && done > 0 && done < total;
+      })
+      .map((c) => c.slug);
+  }, [courses, progressCounts]);
+
+  const progressBySlug = useQuery(
+    api.courses.getLessonProgressForSlugs,
+    user && inProgressSlugs.length > 0 ? { courseSlugs: inProgressSlugs } : "skip",
+  ) as Record<string, ProgressRow[]> | undefined;
 
   const [searchQuery,      setSearchQuery]      = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -237,6 +260,7 @@ export default function CoursesPage() {
                   course={course}
                   isSaved={savedSlugs.has(course.slug)}
                   completedLessons={(progressCounts as Record<string, number>)[course.slug] ?? 0}
+                  progressRows={progressBySlug?.[course.slug]}
                 />
               ))}
             </motion.div>

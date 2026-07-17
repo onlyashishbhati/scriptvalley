@@ -1,6 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { SKILL_SUGGESTIONS, TOOL_SUGGESTIONS } from "./constants";
+import { PORTFOLIO_LIMITS } from "./schema";
 
 export { SKILL_SUGGESTIONS, TOOL_SUGGESTIONS };
 
@@ -26,8 +27,9 @@ const experienceV = v.object({
   order: v.number(),
 });
 
-const MAX_INTERESTS = 12;
-const MAX_TOOLS = 16;
+// Single source of truth for these limits lives in schema.ts (PORTFOLIO_LIMITS)
+// so the validation here can't silently drift out of sync with it.
+const { MAX_INTERESTS, MAX_TOOLS } = PORTFOLIO_LIMITS;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -51,6 +53,10 @@ export const getPortfolio = query({
   args: { userId: v.string() },
   handler: async (ctx, { userId }) => {
     if (!userId) return null;
+
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== userId) return null;
+
     return await ctx.db
       .query("portfolio")
       .withIndex("by_user_id", (q) => q.eq("userId", userId))
@@ -97,6 +103,9 @@ export const upsertPortfolio = mutation({
     { userId, bio, skills, projects, experience, interests, tools, showStats },
   ) => {
     if (!userId) throw new Error("Missing userId");
+
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== userId) throw new Error("Unauthorized");
 
     const cleanBio = bio?.trim() ?? "";
     if (cleanBio.length > 300) throw new Error("Bio must be 300 characters or fewer.");

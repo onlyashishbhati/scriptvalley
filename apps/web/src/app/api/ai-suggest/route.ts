@@ -1,10 +1,18 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
+const MAX_CODE_LENGTH = 20000;
+
 export async function POST(request: NextRequest) {
   try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = (await request.json()) as {
       code: string;
       language: string;
@@ -16,6 +24,13 @@ export async function POST(request: NextRequest) {
     if (!code || !language || !action) {
       return NextResponse.json(
         { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    if (code.length > MAX_CODE_LENGTH) {
+      return NextResponse.json(
+        { error: `Code is too long. Please limit it to ${MAX_CODE_LENGTH} characters.` },
         { status: 400 }
       );
     }

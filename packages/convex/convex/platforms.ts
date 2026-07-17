@@ -1,5 +1,3 @@
-// Platform profile links — GitHub and LeetCode URLs for a user.
-
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
@@ -23,6 +21,10 @@ export const getUserPlatformData = query({
   handler: async (ctx, args) => {
     const userId = sanitizeString(args.userId);
     if (!userId) return null;
+
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== userId) return null;
+
     return await ctx.db
       .query("platforms")
       .withIndex("by_user_id", (q: any) => q.eq("userId", userId))
@@ -41,6 +43,9 @@ export const updateDevStats = mutation({
   handler: async (ctx, args) => {
     const userId = sanitizeString(args.userId);
     if (!userId) throw new Error("Missing userId");
+
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== userId) throw new Error("Unauthorized");
 
     const platform = sanitizeString(args.platform).toLowerCase();
     const stats    = args.stats ?? {};

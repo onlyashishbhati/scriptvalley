@@ -37,7 +37,13 @@ export async function GET(
           Profile not found
         </p>
       </div>,
-      { width: W, height: H },
+      {
+        width: W,
+        height: H,
+        // Short cache — a profile that doesn't exist yet today might exist
+        // (and go public) soon, so don't lock this 404 image in for long.
+        headers: { "Cache-Control": "public, max-age=300" },
+      },
     );
   }
 
@@ -258,6 +264,12 @@ export async function GET(
         ))}
       </div>
     </div>,
-    { width: W, height: H },
+    {
+      width: W,
+      height: H,
+      headers: {
+        "Cache-Control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+      },
+    },
   );
 }

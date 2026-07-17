@@ -15,8 +15,7 @@ export const createSnippet = mutation({
 
     const user = await ctx.db
       .query("users")
-      .withIndex("by_user_id")
-      .filter((q) => q.eq(q.field("userId"), identity.subject))
+      .withIndex("by_user_id", (q) => q.eq("userId", identity.subject))
       .first();
     if (!user) throw new Error("User not found");
 
@@ -44,8 +43,7 @@ export const deleteSnippet = mutation({
 
     const comments = await ctx.db
       .query("snippetComments")
-      .withIndex("by_snippet_id")
-      .filter((q) => q.eq(q.field("snippetId"), snippetId))
+      .withIndex("by_snippet_id", (q) => q.eq("snippetId", snippetId))
       .collect();
     for (const c of comments) await ctx.db.delete(c._id);
 
@@ -61,8 +59,7 @@ export const addComment = mutation({
 
     const user = await ctx.db
       .query("users")
-      .withIndex("by_user_id")
-      .filter((q) => q.eq(q.field("userId"), identity.subject))
+      .withIndex("by_user_id", (q) => q.eq("userId", identity.subject))
       .first();
     if (!user) throw new Error("User not found");
 
@@ -94,7 +91,7 @@ export const getSnippets = query({
   handler: async (ctx) => {
     return await ctx.db
       .query("snippets")
-      .filter((q) => q.eq(q.field("isPrivate"), false))
+      .withIndex("by_privacy", (q) => q.eq("isPrivate", false))
       .order("desc")
       .collect();
   },
@@ -107,8 +104,7 @@ export const getUserSnippets = query({
     if (!identity) return [];
     return await ctx.db
       .query("snippets")
-      .withIndex("by_user_id")
-      .filter((q) => q.eq(q.field("userId"), identity.subject))
+      .withIndex("by_user_id", (q) => q.eq("userId", identity.subject))
       .order("desc")
       .collect();
   },
@@ -134,8 +130,7 @@ export const getComments = query({
   handler: async (ctx, { snippetId }) => {
     return await ctx.db
       .query("snippetComments")
-      .withIndex("by_snippet_id")
-      .filter((q) => q.eq(q.field("snippetId"), snippetId))
+      .withIndex("by_snippet_id", (q) => q.eq("snippetId", snippetId))
       .order("desc")
       .collect();
   },

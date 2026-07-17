@@ -10,8 +10,6 @@ import ClientAnalytics       from "../components/ClientAnalytics";
 import UserSyncProvider      from "../components/providers/UserSyncProvider";
 import SiteChrome from "../components/SiteChrome";
 
-export const dynamic = "force-dynamic";
-
 const inter = Inter({
   variable: "--font-inter",
   subsets:  ["latin"],

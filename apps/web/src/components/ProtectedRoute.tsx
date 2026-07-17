@@ -13,13 +13,20 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden">
-
       <div
         aria-hidden="true"
-        className="pointer-events-none select-none"
+        className="pointer-events-none select-none absolute inset-0"
         style={{ filter: "blur(12px)", opacity: 0.25 }}
       >
-        {children}
+        <div className="p-8 space-y-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-6 rounded-md bg-[var(--bg-hover)]"
+              style={{ width: `${70 - (i % 3) * 12}%` }}
+            />
+          ))}
+        </div>
       </div>
 
       <div className="absolute inset-0 bg-[var(--bg-base)]/60" />

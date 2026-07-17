@@ -1,4 +1,3 @@
-// Code execution history — saved when a user runs code in the editor.
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { paginationOptsValidator } from "convex/server";
@@ -27,10 +26,15 @@ export const getUserExecutions = query({
     paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
+    // Only the owning user can read their own execution history.
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== args.userId) {
+      return { page: [], isDone: true, continueCursor: "" };
+    }
+
     return await ctx.db
       .query("codeExecutions")
-      .withIndex("by_user_id")
-      .filter((q) => q.eq(q.field("userId"), args.userId))
+      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
       .order("desc")
       .paginate(args.paginationOpts);
   },

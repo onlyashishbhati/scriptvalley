@@ -37,10 +37,17 @@ function ShareMenu({ slug, company, role }: { slug: string; company: string; rol
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const copyLink = () => {
-    navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => { setCopied(false); setOpen(false); }, 1500);
+  // BUG FIX: same unhandled-promise-rejection issue as ExperienceCard's
+  // ShareMenu — navigator.clipboard.writeText() can reject and was
+  // previously unawaited/uncaught.
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => { setCopied(false); setOpen(false); }, 1500);
+    } catch {
+      // Clipboard API blocked — no confirmation shown, but no crash either.
+    }
   };
 
   return (
