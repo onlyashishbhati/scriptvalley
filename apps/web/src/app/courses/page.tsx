@@ -21,12 +21,9 @@ export default function CoursesPage() {
   const courses      = useQuery(api.courses.getAllCourses) as Course[] | undefined;
   const savedCourses     = useQuery(api.courses.getSavedCourses) ?? [];
   const progressCounts  = useQuery(api.courses.getAllLessonProgressCounts) ?? {};
+  // NEW — dashboard pin state for course cards.
+  const pinnedCourse = useQuery(api.pins.getMyPinnedCourse, user ? {} : "skip");
 
-  // PERF: figure out which visible courses are "in progress" (some but not
-  // all lessons done) — those are the only ones that need per-lesson
-  // progress rows for the "Continue" deep link. Then fetch all of them in
-  // ONE batched query instead of letting each CourseCard open its own
-  // subscription (see api.courses.getLessonProgressForSlugs).
   const inProgressSlugs = useMemo(() => {
     if (!courses) return [];
     return courses
@@ -48,7 +45,6 @@ export default function CoursesPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [activeFilter,     setActiveFilter]     = useState<FilterKey>("all");
 
-  // Sliding indicator
   const containerRef = useRef<HTMLDivElement>(null);
   const [positions,  setPositions]  = useState<Record<string, BtnPos>>({});
 
@@ -101,7 +97,6 @@ export default function CoursesPage() {
     <div className="min-h-screen bg-[var(--bg-base)]">
       <div className="max-w-5xl mx-auto px-4 md:px-6 py-12 mt-8">
 
-        {/* Page header */}
         <div className="mb-10">
           <motion.p
             initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
@@ -124,7 +119,6 @@ export default function CoursesPage() {
           </motion.p>
         </div>
 
-        {/* Filter switcher + count — mirrors DSA page exactly */}
         <div className="flex items-center mb-6">
           {user && (
             <div
@@ -179,7 +173,6 @@ export default function CoursesPage() {
           </span>
         </div>
 
-        {/* Search + category chips */}
         <div className="mb-8 space-y-3">
           <div className="relative flex items-center h-9 bg-[var(--bg-input)] rounded-md px-3 focus-within:bg-[var(--bg-hover)] transition-colors duration-100">
             <Search className="w-3.5 h-3.5 text-[var(--text-faint)] mr-2.5 shrink-0" />
@@ -226,7 +219,6 @@ export default function CoursesPage() {
           )}
         </div>
 
-        {/* Cards grid */}
         <AnimatePresence mode="wait">
           {finalCourses.length === 0 ? (
             activeFilter === "saved" ? (
@@ -259,6 +251,7 @@ export default function CoursesPage() {
                   key={course._id}
                   course={course}
                   isSaved={savedSlugs.has(course.slug)}
+                  isPinned={pinnedCourse?.courseSlug === course.slug}
                   completedLessons={(progressCounts as Record<string, number>)[course.slug] ?? 0}
                   progressRows={progressBySlug?.[course.slug]}
                 />

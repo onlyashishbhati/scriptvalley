@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useUser } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import { api } from "../../../../../../packages/convex/convex/_generated/api";
-import { Globe, Mail, ExternalLink, LayoutGrid, Linkedin } from "lucide-react";
+import { Globe, Mail, ExternalLink, LayoutGrid, Linkedin, Sparkles } from "lucide-react";
 import { SiGithub, SiLeetcode, SiX } from "react-icons/si";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -68,6 +68,8 @@ export default function ProfileHeaderSection({
     ...(basic?.email       ? [{ href: `mailto:${basic.email}`, icon: <Mail       className="w-3.5 h-3.5" />, label: "Email"    }] : []),
   ];
 
+  const hasPortfolio = !!basic?.username && basic?.profileVisibility === "public";
+
   return (
     <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] overflow-hidden sticky top-20">
 
@@ -103,6 +105,34 @@ export default function ProfileHeaderSection({
           Edit profile
         </Link>
       </div>
+
+      {/* NEW — Portfolio quick-access, requested to live directly in this
+          sidebar rather than as a separate card in the main content area. */}
+      {basic && (
+        <div className="px-4 py-3 border-b border-[var(--border-subtle)]">
+          <p className="text-[10px] uppercase tracking-widest text-[var(--text-disabled)] mb-1.5">Portfolio</p>
+          {hasPortfolio ? (
+            <a
+              href={`/u/${basic.username}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-2 py-1.5 -mx-2 rounded-md hover:bg-[var(--bg-hover)] transition-colors"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#3A5EFF] shrink-0" />
+              <span className="flex-1 text-xs text-[var(--text-secondary)] truncate">View public portfolio</span>
+              <ExternalLink className="w-3 h-3 text-[var(--text-disabled)] shrink-0" />
+            </a>
+          ) : (
+            <Link
+              href="/dev-profile/edit-profile?tab=Share"
+              className="flex items-center gap-2 px-2 py-1.5 -mx-2 rounded-md hover:bg-[var(--bg-hover)] transition-colors"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[var(--text-faint)] shrink-0" />
+              <span className="flex-1 text-xs text-[var(--text-muted)]">Set up your portfolio</span>
+            </Link>
+          )}
+        </div>
+      )}
 
       {/* Nav */}
       <nav className="px-1.5 py-2 space-y-px border-b border-[var(--border-subtle)]">

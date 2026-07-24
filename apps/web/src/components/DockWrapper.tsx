@@ -10,6 +10,7 @@ import {
   FilePenLine,
   Star,
   Presentation,
+  Users2,
 } from "lucide-react";
 import UserDropdown from "./UserDropdown";
 
@@ -28,6 +29,11 @@ export function DockWrapper() {
       title: "Sheets",
       icon: <FileSpreadsheet className="h-full w-full" />,
       href: "/dsa-sheet",
+    },
+    {
+      title: "Blend",
+      icon: <Users2 className="h-full w-full" />,
+      href: "/blend",
     },
     {
       title: "Notes",

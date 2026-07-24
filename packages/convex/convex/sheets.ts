@@ -92,7 +92,6 @@ export const getMySheets = query({
   },
 });
 
-// Admin-only hard delete. Instructors use deleteMySheet which enforces publish guard.
 export const remove = mutation({
   args: { id: v.id("dsaSheets") },
   handler: async ({ db, auth }, { id }: { id: Id<"dsaSheets"> }) => {
@@ -169,7 +168,6 @@ export const createDraftSheet = mutation({
       ? parseContent(args.content)
       : (args.content ?? { topics: [] });
 
-    // Place new sheets at the end by default
     const allSheets  = await db.query("dsaSheets").collect();
     const maxOrder   = allSheets.reduce((m: number, s: any) => Math.max(m, s.order ?? 0), 0);
 
@@ -212,7 +210,6 @@ export const updateDraftSheet = mutation({
 
     const patch: Record<string, any> = {};
 
-    // Only pull back from pending_review — published sheets stay live while edited.
     if (sheet.status === "pending_review") {
       patch.status          = "draft";
       patch.rejectionReason = undefined;
@@ -248,7 +245,6 @@ export const updateDraftSheet = mutation({
   },
 });
 
-// ─── Any instructor can submit any sheet for review.
 export const submitSheetForReview = mutation({
   args: { id: v.id("dsaSheets") },
   handler: async ({ db, auth }, { id }) => {
@@ -268,7 +264,6 @@ export const submitSheetForReview = mutation({
   },
 });
 
-// ─── Any instructor can withdraw a sheet from review.
 export const withdrawSheetFromReview = mutation({
   args: { id: v.id("dsaSheets") },
   handler: async ({ db, auth }, { id }) => {
@@ -283,9 +278,6 @@ export const withdrawSheetFromReview = mutation({
   },
 });
 
-// ─── Delete is blocked for published sheets.
-// Only drafts and rejected sheets can be deleted by any instructor.
-// Admins use the `remove` mutation above for force-deletes.
 export const deleteMySheet = mutation({
   args: { id: v.id("dsaSheets") },
   handler: async ({ db, auth }, { id }) => {
@@ -299,7 +291,6 @@ export const deleteMySheet = mutation({
   },
 });
 
-// One-time migration — run once from the Convex dashboard to backfill legacy sheets.
 export const migrateAllToPublished = mutation({
   handler: async ({ db, auth }) => {
     await requireAdmin(db, auth);
@@ -311,34 +302,9 @@ export const migrateAllToPublished = mutation({
   },
 });
 
-export const followOrUnfollowSheet = mutation({
-  args: { sheetSlug: v.string(), follow: v.boolean() },
-  handler: async ({ db, auth }, { sheetSlug, follow }) => {
-    const identity = await auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthenticated");
-    const userId = identity.subject;
-
-    const existing = await db
-      .query("user_sheet_follow")
-      .withIndex("by_user_sheet", (q: any) =>
-        q.eq("userId", userId).eq("sheetSlug", sheetSlug)
-      )
-      .unique()
-      .catch(() => null);
-
-    if (follow) {
-      const now = Date.now();
-      if (!existing) {
-        await db.insert("user_sheet_follow", { userId, sheetSlug, followedAt: now });
-      } else {
-        await db.replace(existing._id, { ...existing, followedAt: now });
-      }
-    } else {
-      if (existing) await db.delete(existing._id);
-    }
-    return { ok: true };
-  },
-});
+// REMOVED: followOrUnfollowSheet — the "follow" concept has been retired.
+// saveOrUnsaveSheet (below) is now the only bookmark mechanism, and
+// pins.ts's pinSheet covers the new single-item dashboard shortcut.
 
 export const saveOrUnsaveSheet = mutation({
   args: { sheetSlug: v.string(), save: v.boolean() },
@@ -394,7 +360,6 @@ export const getSavedSheets = query({
   },
 });
 
-// Writes to question_attempts (not the attempts table — those are for POTD tracking).
 export const recordAttempt = mutation({
   args: {
     sheetSlug:     v.string(),
@@ -452,7 +417,6 @@ export const recordAttempt = mutation({
   },
 });
 
-// Admin user search — used on the admin report panel.
 export const adminSearchUsers = query({
   args: { q: v.string(), limit: v.optional(v.number()) },
   handler: async ({ db, auth }, { q, limit = 20 }) => {
@@ -469,14 +433,17 @@ export const adminSearchUsers = query({
   },
 });
 
-// Full progress report for a specific user — used on the admin user detail page.
+// Full progress report for a specific user — used on the admin user detail
+// page. `follows` key name kept for backward compatibility with that admin
+// UI, even though it's now sourced from user_sheet_save (the "follow"
+// table it originally read no longer exists).
 export const adminGetUserReport = query({
   args: { userId: v.string() },
   handler: async ({ db, auth }, { userId }) => {
     await requireAdmin(db, auth);
 
     const profile      = await db.query("users").withIndex("by_user_id", (q: any) => q.eq("userId", userId)).unique().catch(() => null);
-    const follows      = await db.query("user_sheet_follow").withIndex("by_user", (q: any) => q.eq("userId", userId)).collect();
+    const follows      = await db.query("user_sheet_save").withIndex("by_user", (q: any) => q.eq("userId", userId)).collect();
     const progressRows = await db.query("sheet_progress").withIndex("by_user_sheet", (q: any) => q.eq("userId", userId)).collect();
     const attempts     = await db.query("question_attempts").withIndex("by_user", (q: any) => q.eq("userId", userId)).take(10000);
 

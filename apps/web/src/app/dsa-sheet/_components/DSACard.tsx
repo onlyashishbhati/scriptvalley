@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bookmark, BookmarkCheck, ListCheck } from "lucide-react";
+import { Pin, PinOff, Bookmark, BookmarkCheck, ListCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import type { DSASheet } from "@/app/dsa-sheet/types";
 import { useMutation } from "convex/react";
@@ -13,11 +13,14 @@ type ProgressType = { completed: number; total: number };
 interface Props {
   sheet: DSASheet;
   progress: ProgressType;
-  isFollowed: boolean;
+  // CHANGED: isFollowed replaced with isPinned — "follow" (the old
+  // unlimited multi-sheet concept) has been retired. isSaved stays as the
+  // unlimited bookmark; isPinned is the NEW single-item "show on my
+  // dashboard" shortcut.
+  isPinned: boolean;
   isSaved: boolean;
 }
 
-// Category badge colors are brand/semantic — intentionally hardcoded
 const CATEGORY_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   popular:          { bg: "rgba(58,94,255,0.08)",  border: "rgba(58,94,255,0.2)",  text: "#3A5EFF" },
   "complete-dsa":   { bg: "rgba(99,102,241,0.08)", border: "rgba(99,102,241,0.2)", text: "#818cf8" },
@@ -27,20 +30,23 @@ const CATEGORY_COLORS: Record<string, { bg: string; border: string; text: string
 
 function stripHtml(html: string) { return html.replace(/<[^>]+>/g, ""); }
 
-export default function DSACard({ sheet, progress, isFollowed, isSaved }: Props) {
+export default function DSACard({ sheet, progress, isPinned, isSaved }: Props) {
   const { user } = useUser();
-  const toggleFollowMutation = useMutation(api.progress.toggleFollow);
-  const toggleSaveMutation   = useMutation(api.sheets.saveOrUnsaveSheet);
+  const pinMutation   = useMutation(api.pins.pinSheet);
+  const unpinMutation = useMutation(api.pins.unpinSheet);
+  const toggleSaveMutation = useMutation(api.sheets.saveOrUnsaveSheet);
 
   const totalQuestions = sheet.topics.reduce((acc, t) => acc + (t.questions?.length ?? 0), 0);
   const pct      = Math.floor((progress.completed / Math.max(1, progress.total)) * 100) || 0;
   const catStyle = CATEGORY_COLORS[sheet.category ?? ""];
 
-  const toggleFollow = async (e: React.MouseEvent) => {
+  const togglePin = async (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
     if (!user) return;
-    try { await toggleFollowMutation({ userId: user.id, sheetSlug: sheet.slug, follow: !isFollowed }); }
-    catch (err) { console.error(err); }
+    try {
+      if (isPinned) await unpinMutation({});
+      else await pinMutation({ sheetSlug: sheet.slug });
+    } catch (err) { console.error(err); }
   };
 
   const toggleSave = async (e: React.MouseEvent) => {
@@ -62,7 +68,6 @@ export default function DSACard({ sheet, progress, isFollowed, isSaved }: Props)
       <Link href={`/dsa-sheet/${sheet.slug}`} className="block h-full">
         <div className="relative h-[200px] rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] hover:border-[var(--border-medium)] transition-colors duration-100 overflow-hidden flex flex-col">
 
-          {/* Progress bar — top accent, brand blue intentionally hardcoded */}
           <div className="absolute inset-x-0 top-0 h-[2px] bg-[var(--bg-hover)]">
             <div
               className="h-full bg-[#3A5EFF] transition-all duration-500"
@@ -71,7 +76,6 @@ export default function DSACard({ sheet, progress, isFollowed, isSaved }: Props)
           </div>
 
           <div className="p-4 flex flex-col gap-2.5 h-full pt-5">
-            {/* Top row */}
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 space-y-1">
                 <h2 className="text-sm font-medium text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors truncate">
@@ -91,12 +95,10 @@ export default function DSACard({ sheet, progress, isFollowed, isSaved }: Props)
               </span>
             </div>
 
-            {/* Description */}
             <p className="text-xs text-[var(--text-faint)] line-clamp-2 leading-relaxed">
               {stripHtml(sheet.description ?? "")}
             </p>
 
-            {/* Footer */}
             <div className="mt-auto pt-2.5 border-t border-[var(--border-default)] flex items-center justify-between">
               <div className="flex items-center gap-1.5 text-xs text-[var(--text-disabled)]">
                 <ListCheck className="w-3.5 h-3.5" />
@@ -105,15 +107,16 @@ export default function DSACard({ sheet, progress, isFollowed, isSaved }: Props)
 
               <div className="flex items-center gap-1" onClick={(e) => e.preventDefault()}>
                 <button
-                  onClick={toggleFollow}
+                  onClick={togglePin}
+                  title={isPinned ? "Unpin from dashboard" : "Pin to dashboard"}
                   className={`flex items-center gap-1 text-xs px-2 py-1 rounded-md transition-colors duration-100 ${
-                    isFollowed
+                    isPinned
                       ? "text-[#3A5EFF] bg-[#3A5EFF]/[0.08]"
                       : "text-[var(--text-faint)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
                   }`}
                 >
-                  <Bookmark className={`w-3 h-3 ${isFollowed ? "fill-[#3A5EFF]" : ""}`} />
-                  {isFollowed ? "Following" : "Follow"}
+                  {isPinned ? <PinOff className="w-3 h-3" /> : <Pin className="w-3 h-3" />}
+                  {isPinned ? "Pinned" : "Pin"}
                 </button>
                 <button
                   onClick={toggleSave}

@@ -12,6 +12,7 @@ import { exploreItems } from "@/app/dsa-sheet/data/explore-items";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuthModal } from "@/components/providers/AuthModalProvider";
 import UserDropdown from "@/components/UserDropdown";
+import NotificationBell from "@/components/NotificationBell";
 
 type Position = { left: number; width: number; opacity: number };
 
@@ -241,21 +242,23 @@ export default function Navbar() {
           <ThemeToggle />
 
           {isSignedIn && (
-            <Link
-              href="/dev-profile"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[var(--border-subtle)] text-xs text-[var(--text-faint)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] hover:border-[var(--border-medium)] transition-colors duration-100"
-            >
-              <LayoutDashboard className="w-3.5 h-3.5" />
-              Dashboard
-            </Link>
+            <>
+              {/* NEW — notification bell, signed-in users only. Placed
+                  before the Dashboard link so it reads left-to-right as
+                  "alerts, then navigation, then account", matching where
+                  most sites put a bell (immediately next to account UI). */}
+              <NotificationBell />
+
+              <Link
+                href="/dev-profile"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[var(--border-subtle)] text-xs text-[var(--text-faint)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] hover:border-[var(--border-medium)] transition-colors duration-100"
+              >
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                Dashboard
+              </Link>
+            </>
           )}
 
-          {/*
-            ── CHANGED ──────────────────────────────────────────────────────
-            Was: <AuthButton isSignedIn={isSignedIn} />
-            Now: UserDropdown (signed in) or Sign in button (signed out)
-            UserDropdown handles both states internally via SignedIn/SignedOut
-          */}
           <UserDropdown signInLabel="Sign in" />
         </div>
 
@@ -296,6 +299,9 @@ export default function Navbar() {
                   />
                 </Link>
                 <div className="flex items-center gap-2">
+                  {/* NEW — bell also available in the mobile drawer header,
+                      next to the theme toggle and close button. */}
+                  {isSignedIn && <NotificationBell />}
                   <ThemeToggle />
                   <button
                     onClick={() => setIsOpen(false)}
@@ -363,11 +369,6 @@ export default function Navbar() {
                     </div>
                   </>
                 ) : (
-                  /*
-                    ── CHANGED ──────────────────────────────────────────────
-                    Was: <SignInButton mode="modal"><button>Sign in</button></SignInButton>
-                    Now: plain button that opens our custom modal
-                  */
                   <button
                     onClick={() => { openSignIn(); setIsOpen(false); }}
                     className="flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-md border border-[var(--border-subtle)] text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] hover:border-[var(--border-medium)] transition-colors"

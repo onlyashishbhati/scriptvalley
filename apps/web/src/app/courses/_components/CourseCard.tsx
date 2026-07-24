@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Layers, FileText, Bookmark, BookmarkCheck, PlayCircle } from "lucide-react";
+import { Layers, FileText, Bookmark, BookmarkCheck, PlayCircle, Pin, PinOff } from "lucide-react";
 import { motion } from "framer-motion";
 import { useMutation } from "convex/react";
 import { api } from "../../../../../../packages/convex/convex/_generated/api";
@@ -17,7 +17,6 @@ const LEVEL_META: Record<string, { label: string; color: string; bg: string }> =
   "all-levels": { label: "All Levels",   color: "#3A5EFF", bg: "rgba(58,94,255,0.08)"  },
 };
 
-// Builds a lesson slug the same way the rest of the app does
 function makeLessonSlug(title: string, idx: number): string {
   const base = title.trim().toLowerCase()
     .replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").slice(0, 60);
@@ -27,14 +26,43 @@ function makeLessonSlug(title: string, idx: number): string {
 interface Props {
   course:            Course;
   isSaved:           boolean;
+  isPinned:          boolean;
   completedLessons?: number;
   progressRows?: { moduleSlug: string; lessonSlug: string }[];
 }
 
-export default function CourseCard({ course, isSaved, completedLessons = 0, progressRows }: Props) {
+function IconAction({
+  active, onClick, activeIcon, inactiveIcon, activeTitle, inactiveTitle, activeColor = "#3A5EFF",
+}: {
+  active: boolean;
+  onClick: (e: React.MouseEvent) => void;
+  activeIcon: React.ReactNode;
+  inactiveIcon: React.ReactNode;
+  activeTitle: string;
+  inactiveTitle: string;
+  activeColor?: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={active ? activeTitle : inactiveTitle}
+      className="w-7 h-7 flex items-center justify-center rounded-md transition-colors duration-100"
+      style={{
+        color: active ? activeColor : "var(--text-faint)",
+        background: active ? `${activeColor}14` : "transparent",
+      }}
+    >
+      {active ? activeIcon : inactiveIcon}
+    </button>
+  );
+}
+
+export default function CourseCard({ course, isSaved, isPinned, completedLessons = 0, progressRows }: Props) {
   const { user }      = useUser();
   const router        = useRouter();
   const toggleSaveMut = useMutation(api.courses.saveOrUnsaveCourse);
+  const pinMutation    = useMutation(api.pins.pinCourse);
+  const unpinMutation  = useMutation(api.pins.unpinCourse);
 
   const moduleCount  = course.modules?.length ?? 0;
   const isStructured = course.template === "structured";
@@ -69,9 +97,7 @@ export default function CourseCard({ course, isSaved, completedLessons = 0, prog
   }
 
   const resumeHref = hasStarted ? getResumeHref() : null;
-
   const href = `/courses/${course.slug}`;
-
   const levelMeta = course.level ? LEVEL_META[course.level] : null;
 
   async function toggleSave(e: React.MouseEvent) {
@@ -86,14 +112,18 @@ export default function CourseCard({ course, isSaved, completedLessons = 0, prog
     }
   }
 
-  // BUG FIX: this "Continue" control was a <Link> (renders <a>) nested
-  // inside the card's outer <Link> (also an <a>) — the browser silently
-  // closes the outer anchor early and React then hydrates a mismatched
-  // tree, which is exactly the "<a> cannot be a descendant of <a>"
-  // hydration error. Nested interactive anchors are invalid HTML
-  // regardless of framework. Fixed by using a plain <button> that
-  // stops propagation and navigates imperatively via useRouter — same
-  // click behavior, no invalid nesting.
+  async function togglePin(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) { toast.error("Sign in to pin courses"); return; }
+    try {
+      if (isPinned) await unpinMutation({});
+      else await pinMutation({ courseSlug: course.slug });
+    } catch {
+      toast.error("Something went wrong");
+    }
+  }
+
   function goToResume(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
@@ -125,88 +155,76 @@ export default function CourseCard({ course, isSaved, completedLessons = 0, prog
 
           <div className="p-4 flex flex-col gap-2.5 h-full pt-5">
 
-            {/* Top row */}
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0 space-y-1.5 flex-1">
-                <h2 className="text-sm font-medium text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors line-clamp-1">
-                  {course.title}
-                </h2>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {course.category && (
-                    <span className="inline-flex text-[10px] uppercase tracking-widest rounded px-1.5 py-0.5 border bg-[rgba(58,94,255,0.08)] border-[rgba(58,94,255,0.2)] text-[#3A5EFF]">
-                      {course.category}
-                    </span>
-                  )}
-                  {levelMeta && (
-                    <span
-                      className="inline-flex text-[10px] rounded px-1.5 py-0.5 font-medium"
-                      style={{ color: levelMeta.color, background: levelMeta.bg }}
-                    >
-                      {levelMeta.label}
-                    </span>
-                  )}
-                </div>
+            {/* Top row — no more % badge here; the progress bar above the
+                card + the lesson-count chip in the footer already convey
+                progress, so the badge was purely redundant clutter. */}
+            <div className="min-w-0 space-y-1.5">
+              <h2 className="text-sm font-medium text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors line-clamp-1">
+                {course.title}
+              </h2>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {course.category && (
+                  <span className="inline-flex text-[10px] uppercase tracking-widest rounded px-1.5 py-0.5 border bg-[rgba(58,94,255,0.08)] border-[rgba(58,94,255,0.2)] text-[#3A5EFF]">
+                    {course.category}
+                  </span>
+                )}
+                {levelMeta && (
+                  <span
+                    className="inline-flex text-[10px] rounded px-1.5 py-0.5 font-medium"
+                    style={{ color: levelMeta.color, background: levelMeta.bg }}
+                  >
+                    {levelMeta.label}
+                  </span>
+                )}
               </div>
-
-              {/* Progress % */}
-              {isStructured && totalLessons > 0 && (
-                <span className="shrink-0 text-[10px] text-[var(--text-disabled)] bg-[var(--bg-hover)] rounded px-1.5 py-0.5">
-                  {pct}%
-                </span>
-              )}
             </div>
 
-            {/* Description */}
             <p className="text-xs text-[var(--text-faint)] line-clamp-2 leading-relaxed">
               {course.description ?? "No description provided."}
             </p>
 
-            {/* Footer */}
             <div className="mt-auto pt-2.5 border-t border-[var(--border-subtle)] flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5 text-xs text-[var(--text-disabled)]">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-center gap-1.5 text-xs text-[var(--text-disabled)] shrink-0">
                   <Layers className="w-3.5 h-3.5" />
-                  <span>{moduleCount} module{moduleCount !== 1 ? "s" : ""}</span>
+                  <span>{moduleCount}</span>
                 </div>
                 {isStructured && totalLessons > 0 && (
-                  <div className="flex items-center gap-1.5 text-xs text-[var(--text-disabled)]">
+                  <div className="flex items-center gap-1.5 text-xs text-[var(--text-disabled)] shrink-0">
                     <FileText className="w-3 h-3" />
                     <span>{completedLessons}/{totalLessons}</span>
                   </div>
                 )}
               </div>
 
-              {/* Action buttons */}
-              <div className="flex items-center gap-1" onClick={(e) => e.preventDefault()}>
-
-                {/* Continue button — shows only when in progress. Plain
-                    <button>, not <Link>, to avoid an <a> nested inside the
-                    card's outer <Link>'s <a>. */}
+              <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.preventDefault()}>
                 {resumeHref && (
                   <button
                     onClick={goToResume}
-                    className="flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors duration-100 text-[#3A5EFF] bg-[rgba(58,94,255,0.08)] hover:bg-[rgba(58,94,255,0.14)]"
+                    title="Continue where you left off"
+                    className="w-7 h-7 flex items-center justify-center rounded-md text-[#3A5EFF] bg-[rgba(58,94,255,0.08)] hover:bg-[rgba(58,94,255,0.14)] transition-colors"
                   >
-                    <PlayCircle className="w-3 h-3" />
-                    <span>Continue</span>
+                    <PlayCircle className="w-4 h-4" />
                   </button>
                 )}
 
-                {/* Save button */}
-                <button
+                <IconAction
+                  active={isPinned}
+                  onClick={togglePin}
+                  activeIcon={<PinOff className="w-3.5 h-3.5" />}
+                  inactiveIcon={<Pin className="w-3.5 h-3.5" />}
+                  activeTitle="Unpin from dashboard"
+                  inactiveTitle="Pin to dashboard"
+                />
+
+                <IconAction
+                  active={isSaved}
                   onClick={toggleSave}
-                  className={`flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors duration-100 ${
-                    isSaved
-                      ? "text-[#3A5EFF] bg-[rgba(58,94,255,0.08)]"
-                      : "text-[var(--text-faint)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
-                  }`}
-                >
-                  {isSaved
-                    ? <BookmarkCheck className="w-3 h-3 fill-[#3A5EFF]" />
-                    : <Bookmark      className="w-3 h-3" />
-                  }
-                  <span>{isSaved ? "Saved" : "Save"}</span>
-                </button>
+                  activeIcon={<BookmarkCheck className="w-3.5 h-3.5 fill-[#3A5EFF]" />}
+                  inactiveIcon={<Bookmark className="w-3.5 h-3.5" />}
+                  activeTitle="Remove from saved"
+                  inactiveTitle="Save course"
+                />
               </div>
             </div>
           </div>

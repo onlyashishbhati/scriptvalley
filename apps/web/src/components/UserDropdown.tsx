@@ -27,21 +27,20 @@ export default function UserDropdown({
   const { user, isLoaded } = useUser();
   const { signOut }        = useClerk();
   const { openSignIn }     = useAuthModal();
-  // Reuse the shared theme hook instead of re-implementing dark-mode
-  // detection + localStorage handling here — keeps the "sv-theme" key and
-  // toggle behavior in exactly one place instead of two that could drift.
   const { isDark: dark, toggle: toggleTheme } = useTheme();
 
   const [open, setOpen]     = useState(false);
   const [pos,  setPos]      = useState<DropdownPos>({});
   const [dropUp, setDropUp] = useState(false);
   const triggerRef          = useRef<HTMLDivElement>(null);
+  const panelRef            = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handler(e: MouseEvent) {
-      if (triggerRef.current && !triggerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      const target = e.target as Node;
+      const insideTrigger = triggerRef.current?.contains(target);
+      const insidePanel = panelRef.current?.contains(target);
+      if (!insideTrigger && !insidePanel) setOpen(false);
     }
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -116,6 +115,7 @@ export default function UserDropdown({
     <AnimatePresence>
       {open && (
         <motion.div
+          ref={panelRef}
           initial={{ opacity: 0, y: dropUp ? -6 : 6, scale: 0.97 }}
           animate={{ opacity: 1, y: 0,               scale: 1    }}
           exit={{    opacity: 0, y: dropUp ? -6 : 6, scale: 0.97 }}

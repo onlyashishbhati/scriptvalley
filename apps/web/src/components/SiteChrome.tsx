@@ -17,7 +17,7 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
     <>
       <Navbar />
       <AnnouncementBanner />
-      {children}
+      <div className="mb-14">{children}</div>
       <DockWrapper />
     </>
   );

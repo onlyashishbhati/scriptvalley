@@ -382,7 +382,7 @@ export const getPublicProfile = query({
 
     // Count followed sheets (used in badge engine later).
     const followedSheets = await ctx.db
-      .query("user_sheet_follow")
+      .query("user_sheet_save")
       .withIndex("by_user", (q: any) => q.eq("userId", user.userId))
       .collect();
 

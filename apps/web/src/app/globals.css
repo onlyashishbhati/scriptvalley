@@ -12,11 +12,26 @@
   --bg-input:       #f1f1ef;
   --border-subtle:  #e3e3e0;
   --border-medium:  #dcdcda;
+  /* FIX: this variable is referenced across dozens of components
+     (SnippetCard, Comments, DSACard, QuestionRow, ExperienceCard, every
+     Blend divide-y list, etc.) but was never defined here — an undefined
+     CSS custom property with no fallback resolves to nothing, so every
+     "border-[var(--border-default)]" divider in the app has been
+     rendering invisibly. Aliased to --border-medium so it reads as a
+     clearly-visible standard divider, consistent with the hover-state
+     border color already used elsewhere. */
+  --border-default: var(--border-medium);
+  /* FIX: previously #9b9b9b — ~2.8:1 contrast on white, too washed out
+     for the section labels/captions this tier is actually used for. */
   --text-primary:   #1a1a1a;
   --text-secondary: #37352f;
   --text-muted:     #6b6b6b;
-  --text-faint:     #9b9b9b;
-  --text-disabled:  #c7c7c0;
+  --text-faint:     #86867f;
+  /* FIX: previously #c7c7c0 — ~1.5:1 contrast on white, nearly
+     illegible. Bumped to a value that's still clearly the most
+     de-emphasized tier but actually readable for the stat labels,
+     timestamps, and captions that use it. */
+  --text-disabled:  #a3a39c;
   --brand:          #3A5EFF;
   --brand-hover:    #4a6aff;
   --brand-subtle:   rgba(58, 94, 255, 0.12);
@@ -39,11 +54,18 @@
   --bg-input:       #2a2a2a;
   --border-subtle:  #2a2a2a;
   --border-medium:  #333333;
+  /* Same fix as :root — see comment above. */
+  --border-default: var(--border-medium);
   --text-primary:   #e8e8e8;
   --text-secondary: #cccccc;
   --text-muted:     #999999;
-  --text-faint:     #555555;
-  --text-disabled:  #3d3d3d;
+  /* FIX: previously #555555 — ~2.6:1 contrast on --bg-base, too dim. */
+  --text-faint:     #707070;
+  /* FIX: previously #3d3d3d — ~1.6:1 contrast on --bg-base, nearly
+     invisible against the dark background. This was the most severe
+     instance of the "dull text" complaint — labels using this tier in
+     dark mode were essentially unreadable. */
+  --text-disabled:  #5a5a56;
   --brand:          #3A5EFF;
   --brand-hover:    #4a6aff;
   --brand-subtle:   rgba(58, 94, 255, 0.12);
@@ -176,13 +198,10 @@ svg, img, canvas, video { transition: none; }
     font-size: 10px;
     color: #1a1a1a;
     line-height: 1.5;
-    /* Replicate @page margins since position:absolute doesn't respect them */
     padding: 18mm 16mm 14mm 16mm;
   }
 
   .sv-print-only * { visibility: visible !important; }
-
-  /* ── Document header ─────────────────────────────────────────────────────── */
 
   .sv-print-doc-header {
     display: flex;
@@ -280,11 +299,6 @@ svg, img, canvas, video { transition: none; }
     margin-top: 2px;
   }
 
-  /* ── Difficulty summary strip ──────────────────────────────────────────────
-     Shows total Easy/Medium/Hard counts — no progress, just totals.
-     Clean strip matching the ScriptValley card style.
-  ─────────────────────────────────────────────────────────────────────────── */
-
   .sv-print-diff-strip {
     display: flex;
     gap: 0;
@@ -324,8 +338,6 @@ svg, img, canvas, video { transition: none; }
     color: #9b9b9b;
     font-weight: 400;
   }
-
-  /* ── Topic block ──────────────────────────────────────────────────────────── */
 
   .sv-print-topic {
     margin-bottom: 16px;
@@ -367,8 +379,6 @@ svg, img, canvas, video { transition: none; }
     font-weight: 400;
   }
 
-  /* ── Sub-topic ────────────────────────────────────────────────────────────── */
-
   .sv-print-subtopic-header {
     font-size: 8.5px;
     font-weight: 600;
@@ -382,8 +392,6 @@ svg, img, canvas, video { transition: none; }
     letter-spacing: 0.05em;
     margin: 0;
   }
-
-  /* ── Question table ───────────────────────────────────────────────────────── */
 
   .sv-print-table {
     width: 100%;
@@ -404,10 +412,8 @@ svg, img, canvas, video { transition: none; }
 
   .sv-print-row:last-child td { border-bottom: none; }
 
-  /* Subtle alternate row tint for long lists */
   .sv-print-row:nth-child(even) td { background: #fafaf9; }
 
-  /* Checkbox column — empty square to tick by hand */
   .sv-print-col-check {
     width: 24px;
     text-align: center;
@@ -456,8 +462,6 @@ svg, img, canvas, video { transition: none; }
     text-align: right;
     padding-right: 10px !important;
   }
-
-  /* ── Footer ──────────────────────────────────────────────────────────────── */
 
   .sv-print-footer {
     margin-top: 28px;

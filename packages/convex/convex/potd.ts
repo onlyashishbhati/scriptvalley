@@ -1,3 +1,5 @@
+// Problem of the Day — picks a personalized question for the user each day
+// and tracks their solve streak via potdLogs.
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { upsertSheetProgress } from "./_helper";
@@ -7,7 +9,6 @@ function todayKey() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-// Same seed + date = same pick all day. Different users get different questions.
 function seededRandom(seed: string): number {
   let h = 2166136261 >>> 0;
   for (let i = 0; i < seed.length; i++) {
@@ -17,11 +18,16 @@ function seededRandom(seed: string): number {
   return h / 0xffffffff;
 }
 
+// CHANGED: previously returned literal emoji characters ("🏆"/"🔥"/"⚡"/"✅")
+// which the streak calendar rendered as raw text. Now returns a semantic
+// key — the `emoji` field name is kept as-is (no schema/migration needed),
+// but the value is an icon key that Streakcalendar.tsx maps to a Lucide
+// icon + color, so nothing on-screen is an actual emoji character anymore.
 function pickEmoji(difficulty: string, streak: number): string {
-  if (difficulty === "Hard") return "🏆";
-  if (streak >= 3)           return "🔥";
-  if (difficulty === "Easy") return "⚡";
-  return "✅";
+  if (difficulty === "Hard") return "hard";
+  if (streak >= 3)           return "streak";
+  if (difficulty === "Easy") return "easy";
+  return "solved";
 }
 
 async function computeCurrentStreak(ctx: any, userId: string): Promise<number> {
@@ -76,27 +82,21 @@ function flattenSheet(sheet: any): QuestionCandidate[] {
 
 type SourceReason = "followed" | "other_sheets" | "global" | "all_done";
 
-// Personalized POTD selection logic:
-//   Case A — no followed sheets       → pick from all sheets (unattempted first)
-//   Case B — all followed sheets done → pick from non-followed sheets
-//   Case C — normal                   → pick unattempted from followed sheets
-//   Case D — everything ever done     → repeat from global pool
 export const getPersonalizedPotd = query({
   args: { userId: v.string() },
   handler: async (ctx, { userId }) => {
     if (!userId) return null;
 
-    // Only the owning user can request their own personalized POTD.
     const identity = await ctx.auth.getUserIdentity();
     if (!identity || identity.subject !== userId) return null;
 
     const date       = todayKey();
-    const followRows = await ctx.db
-      .query("user_sheet_follow")
+    const savedRows = await ctx.db
+      .query("user_sheet_save")
       .withIndex("by_user", (q: any) => q.eq("userId", userId))
       .collect();
 
-    const followedSlugs: string[] = followRows.map((r: any) => r.sheetSlug);
+    const followedSlugs: string[] = savedRows.map((r: any) => r.sheetSlug);
 
     const attemptRows = await ctx.db
       .query("attempts")
@@ -126,7 +126,6 @@ export const getPersonalizedPotd = query({
       return { date, ...picked, streak, totalPool: pool.length, isAllDone, sourceReason };
     }
 
-    // Case A
     if (followedSlugs.length === 0) {
       const allSheets  = await ctx.db.query("dsaSheets").collect();
       const allQs      = allSheets.flatMap(flattenSheet);
@@ -154,13 +153,11 @@ export const getPersonalizedPotd = query({
       .filter((d) => d.unattempted.length > 0)
       .flatMap((d) => d.unattempted);
 
-    // Case C
     if (unattemptedFromFollowed.length > 0) {
       const streak = await computeCurrentStreak(ctx, userId);
       return buildResult(seedPick(unattemptedFromFollowed), unattemptedFromFollowed, false, "followed", streak);
     }
 
-    // Case B
     const followedSlugSet  = new Set(followedSlugs);
     const allSheets        = await ctx.db.query("dsaSheets").collect();
     const otherSheets      = allSheets.filter((s: any) => !followedSlugSet.has(s.slug));
@@ -171,7 +168,6 @@ export const getPersonalizedPotd = query({
       return buildResult(seedPick(unattemptedOther), unattemptedOther, false, "other_sheets", streak);
     }
 
-    // Case D — the user has done literally everything, just pick anything
     const allQs = allSheets.flatMap(flattenSheet);
     if (allQs.length === 0) return null;
     const streak = await computeCurrentStreak(ctx, userId);
@@ -198,8 +194,6 @@ export const isSolvedToday = query({
   },
 });
 
-// Marks the POTD as solved. Also writes to the attempts table so sheet progress stays in sync.
-// Unmarking only removes the log — the attempt record is kept so progress isn't lost.
 export const markSolvedToday = mutation({
   args: {
     userId:        v.string(),
@@ -223,7 +217,7 @@ export const markSolvedToday = mutation({
       .catch(() => null);
 
     if (solved) {
-      if (existingLog) return { ok: true }; // already marked today
+      if (existingLog) return { ok: true };
 
       const streak = await computeCurrentStreak(ctx, userId);
       const emoji  = pickEmoji(difficulty, streak + 1);
@@ -232,7 +226,6 @@ export const markSolvedToday = mutation({
         userId, date, questionTitle, sheetSlug, solved: true, emoji, count: 1,
       });
 
-      // Upsert attempt row so the question shows as done on the sheet page.
       const existingAttempt = await ctx.db
         .query("attempts")
         .withIndex("by_user_question", (q: any) =>
@@ -247,7 +240,6 @@ export const markSolvedToday = mutation({
         await ctx.db.insert("attempts", { userId, questionTitle, sheetSlug, difficulty, attempted: true });
       }
 
-      // Recompute sheet_progress using the shared helper.
       const userAttempts = await ctx.db
         .query("attempts")
         .withIndex("by_user_question", (q: any) => q.eq("userId", userId))

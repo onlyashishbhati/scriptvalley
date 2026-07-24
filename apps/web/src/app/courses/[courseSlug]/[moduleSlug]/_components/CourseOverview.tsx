@@ -16,7 +16,11 @@ import {
 } from "lucide-react";
 import { Course, CourseModule, Lesson, lessonSlug } from "../../../courseTypes";
 import CourseResetSection from "../../[moduleSlug]/_components/CourseResetSection";
-import CheatSheetPanel    from "../../[moduleSlug]/_components/CheatSheetPanel";
+// NOTE: CheatSheetPanel is no longer rendered here — it was buried at the
+// very bottom of this page, below the danger-zone reset section, where
+// almost nobody scrolled far enough to notice it. It now lives at the top
+// of the course sidebar instead (see CheatSheetSidebarCard.tsx, wired into
+// CourseShell.tsx), visible on every page of the course, not just this one.
 
 const LEVEL_META: Record<
   string,
@@ -48,7 +52,6 @@ const LEVEL_META: Record<
   },
 };
 
-// ── Lesson row ────────────────────────────────────────────────────────────────
 function LessonRow({
   courseSlug,
   moduleSlug,
@@ -89,7 +92,6 @@ function LessonRow({
   );
 }
 
-// ── Module section ────────────────────────────────────────────────────────────
 function ModuleSection({
   course,
   mod,
@@ -115,7 +117,6 @@ function ModuleSection({
       transition={{ duration: 0.14, delay: modIndex * 0.04, ease: "easeOut" }}
       className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] overflow-hidden"
     >
-      {/* Module header */}
       <div className="flex items-start justify-between gap-3 px-4 py-3 border-b border-[var(--border-subtle)] bg-[var(--bg-input)]">
         <div className="flex items-center gap-2.5 min-w-0">
           <span className="w-5 h-5 rounded bg-[var(--bg-hover)] border border-[var(--border-subtle)] flex items-center justify-center text-[9px] font-bold text-[var(--text-muted)] shrink-0">
@@ -133,7 +134,6 @@ function ModuleSection({
           </div>
         </div>
 
-        {/* Count chips */}
         <div className="flex items-center gap-1 shrink-0">
           {isStructured && lessons.length > 0 && (
             <span className="flex items-center gap-1 text-[9px] text-[var(--text-disabled)] bg-[var(--bg-hover)] px-1.5 py-0.5 rounded">
@@ -161,7 +161,6 @@ function ModuleSection({
         </div>
       </div>
 
-      {/* Structured: lesson rows */}
       {isStructured && lessons.length > 0 && (
         <div className="px-2 py-1.5 space-y-px">
           {lessons.map((lesson, li) => (
@@ -177,7 +176,6 @@ function ModuleSection({
         </div>
       )}
 
-      {/* Freeform: single read link */}
       {!isStructured && (
         <div className="px-2 py-1.5">
           <Link
@@ -193,14 +191,13 @@ function ModuleSection({
         </div>
       )}
 
-      {/* Assessment row */}
       {hasAssess && (
         <div className="px-2 pb-1.5">
           <Link
             href={`/courses/${course.slug}/${mod.slug}/assessments`}
             className="group flex items-center gap-2.5 px-3 py-2.5 rounded-md border border-dashed border-[var(--border-subtle)] hover:border-[rgba(58,94,255,0.25)] hover:bg-[rgba(58,94,255,0.03)] transition-all"
           >
-            <span className="text-sm shrink-0">🎯</span>
+            <HelpCircle className="w-3.5 h-3.5 text-[#3A5EFF] shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-xs text-[var(--text-muted)] group-hover:text-[var(--text-secondary)] transition-colors">
                 Practice &amp; Assessment
@@ -223,7 +220,6 @@ function ModuleSection({
   );
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
 export default function CourseOverview({ course }: { course: Course }) {
   const { user }     = useUser();
   const isStructured = course.template === "structured";
@@ -240,7 +236,6 @@ export default function CourseOverview({ course }: { course: Course }) {
   );
   const levelMeta = course.level ? LEVEL_META[course.level] : null;
 
-  // ── Fetch progress so we can show the reset section and "Continue" CTA ──
   const progressRows = useQuery(
     api.courses.getLessonProgress,
     user ? { courseSlug: course.slug } : "skip",
@@ -248,7 +243,6 @@ export default function CourseOverview({ course }: { course: Course }) {
 
   const completedLessons = progressRows?.length ?? 0;
 
-  // ── Build deep-link CTA: Continue if in progress, Start if fresh ──────────
   const completedSet = new Set(
     (progressRows ?? []).map((r) => `${r.moduleSlug}::${r.lessonSlug}`)
   );
@@ -260,7 +254,6 @@ export default function CourseOverview({ course }: { course: Course }) {
   }
 
   function getCtaHref(): string {
-    // If in progress, deep-link to the first incomplete lesson
     if (isStructured && completedLessons > 0 && completedLessons < totalLessons) {
       for (const mod of modules) {
         const lessons = [...(mod.lessons ?? [])].sort((a, b) => a.order - b.order);
@@ -272,7 +265,6 @@ export default function CourseOverview({ course }: { course: Course }) {
         }
       }
     }
-    // Default: start from the beginning
     const firstMod = modules[0];
     if (!firstMod) return `/courses/${course.slug}`;
     return isStructured && firstMod.lessons?.[0]
@@ -284,7 +276,6 @@ export default function CourseOverview({ course }: { course: Course }) {
   const isInProgress = isStructured && completedLessons > 0 && completedLessons < totalLessons;
   const isCompleted  = isStructured && totalLessons > 0 && completedLessons >= totalLessons;
 
-  // ── Cumulative lesson offsets for global numbering ────────────────────────
   const lessonOffsets: number[] = [];
   let off = 0;
   for (const m of modules) {
@@ -299,10 +290,8 @@ export default function CourseOverview({ course }: { course: Course }) {
       transition={{ duration: 0.15 }}
       className="flex flex-col min-h-full"
     >
-      {/* ── Page header ───────────────────────────────────────────────────── */}
       <header className="px-8 md:px-14 pt-10 pb-8 border-b border-[var(--border-subtle)]">
 
-        {/* Breadcrumb */}
         <nav className="flex items-center gap-1.5 text-xs text-[var(--text-disabled)] mb-6">
           <Link href="/courses" className="hover:text-[var(--text-faint)] transition-colors">
             Courses
@@ -311,7 +300,6 @@ export default function CourseOverview({ course }: { course: Course }) {
           <span className="text-[var(--text-faint)] truncate">{course.title}</span>
         </nav>
 
-        {/* Badges */}
         {(levelMeta || course.category) && (
           <div className="flex items-center gap-2 mb-3 flex-wrap">
             {course.category && (
@@ -330,7 +318,6 @@ export default function CourseOverview({ course }: { course: Course }) {
           </div>
         )}
 
-        {/* Title */}
         <h1 className="text-3xl font-bold text-[var(--text-primary)] leading-tight tracking-tight mb-2">
           {course.title}
         </h1>
@@ -341,7 +328,6 @@ export default function CourseOverview({ course }: { course: Course }) {
           </p>
         )}
 
-        {/* Property rows */}
         <div className="space-y-1.5 mb-6">
           {(
             [
@@ -380,7 +366,6 @@ export default function CourseOverview({ course }: { course: Course }) {
             ))}
         </div>
 
-        {/* Progress bar — structured courses with progress */}
         {isStructured && totalLessons > 0 && completedLessons > 0 && (
           <div className="mb-5 max-w-xs">
             <div className="h-1.5 rounded-full bg-[var(--bg-hover)] overflow-hidden">
@@ -392,7 +377,6 @@ export default function CourseOverview({ course }: { course: Course }) {
           </div>
         )}
 
-        {/* CTA button */}
         <Link
           href={ctaHref}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-[#3A5EFF] hover:bg-[#2d4ee0] text-white text-sm font-medium transition-colors"
@@ -407,7 +391,6 @@ export default function CourseOverview({ course }: { course: Course }) {
         </Link>
       </header>
 
-      {/* ── Content list ──────────────────────────────────────────────────── */}
       <div className="flex-1 px-8 md:px-14 py-8">
         <div className="flex items-center gap-2 mb-4">
           <p className="text-[10px] font-medium uppercase tracking-widest text-[var(--text-disabled)]">
@@ -438,12 +421,8 @@ export default function CourseOverview({ course }: { course: Course }) {
           </div>
         )}
 
-        {/* ── Cheat Sheet panel — server-gated by progress threshold ──────── */}
-        <CheatSheetPanel courseSlug={course.slug} />
-
-        {/* ── Reset section — only for signed-in users with progress ─────── */}
         {user && isStructured && (
-          <div className="max-w-2xl">
+          <div className="max-w-2xl mt-8">
             <CourseResetSection
               courseSlug={course.slug}
               courseTitle={course.title}

@@ -16,3 +16,15 @@ export const TOOL_SUGGESTIONS = [
   "Premiere Pro", "Notion", "Postman", "Docker Desktop", "DaVinci Resolve",
   "Sketch", "Adobe XD", "Blender", "Linear", "Slack", "GitHub Desktop",
 ] as const;
+
+export const ACCENT_COLOR_OPTIONS = [
+  { key: "blue",    label: "Blue",    hex: "#3A5EFF" },
+  { key: "emerald", label: "Emerald", hex: "#10b981" },
+  { key: "violet",  label: "Violet",  hex: "#8b5cf6" },
+  { key: "rose",    label: "Rose",    hex: "#f43f5e" },
+  { key: "amber",   label: "Amber",   hex: "#f59e0b" },
+  { key: "cyan",    label: "Cyan",    hex: "#06b6d4" },
+] as const;
+
+export type AccentColorKey = (typeof ACCENT_COLOR_OPTIONS)[number]["key"];
+export const ACCENT_COLOR_KEYS = ACCENT_COLOR_OPTIONS.map((c) => c.key);

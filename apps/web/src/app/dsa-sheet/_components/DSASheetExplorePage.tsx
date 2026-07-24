@@ -12,7 +12,6 @@ import { Bookmark, Search, Tag, X } from "lucide-react";
 import DSASheetExploreSkeleton from "./Dsasheetexploreskeleton";
 
 type SavedSheet    = { slug: string };
-type FollowedSheet = { id: string };
 type SheetFilter   = "all" | "saved";
 type BtnPos        = { left: number; width: number };
 
@@ -24,7 +23,9 @@ export default function DSASheetExplorePage() {
   const sheets         = rawSheets ?? [];
   const attempts       = useQuery(api.progress.getAllAttempts, userId ? { userId } : "skip");
   const savedSheets    = useQuery(api.sheets.getSavedSheets)                                 ?? [];
-  const followedSheets = useQuery(api.progress.getFollowedSheets, userId ? { userId } : "skip") ?? [];
+  // CHANGED: "follow" retired — pin state now comes from pins.ts's single
+  // getMyPinnedSheet query instead of a per-user list of followed slugs.
+  const pinnedSheet    = useQuery(api.pins.getMyPinnedSheet, userId ? {} : "skip");
 
   const [searchQuery,      setSearchQuery]      = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -84,7 +85,6 @@ export default function DSASheetExplorePage() {
     <div className="min-h-screen bg-[var(--bg-base)]">
       <div className="max-w-5xl mx-auto px-4 md:px-6 py-12 mt-8">
 
-        {/* Page header */}
         <div className="mb-10">
           <motion.p
             initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
@@ -108,7 +108,6 @@ export default function DSASheetExplorePage() {
           </motion.p>
         </div>
 
-        {/* Filter switcher + count */}
         <div className="flex items-center mb-8">
           {user && (
             <div
@@ -162,7 +161,6 @@ export default function DSASheetExplorePage() {
           </span>
         </div>
 
-        {/* Search + category chips */}
         <div className="mb-8 space-y-3">
           <div className="relative flex items-center h-9 bg-[var(--bg-input)] rounded-md px-3 focus-within:bg-[var(--bg-hover)] transition-colors duration-100">
             <Search className="w-3.5 h-3.5 text-[var(--text-faint)] mr-2.5 shrink-0" />
@@ -211,27 +209,25 @@ export default function DSASheetExplorePage() {
           </div>
         </div>
 
-        {/* Cards grid */}
         <AnimatePresence mode="wait">
           <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {finalSheets.map((sheet) => {
               const progress   = computeProgress({ sheet, localAttempts: {}, attempts: attempts ?? [] });
-              const isSaved    = (savedSheets    as SavedSheet[]).some((s) => s.slug === sheet.slug);
-              const isFollowed = (followedSheets as FollowedSheet[]).some((f) => f.id === sheet.slug);
+              const isSaved    = (savedSheets as SavedSheet[]).some((s) => s.slug === sheet.slug);
+              const isPinned   = pinnedSheet?.sheetSlug === sheet.slug;
               return (
                 <DSACard
                   key={sheet.slug}
                   sheet={sheet}
                   progress={progress.total}
                   isSaved={isSaved}
-                  isFollowed={isFollowed}
+                  isPinned={isPinned}
                 />
               );
             })}
           </motion.div>
         </AnimatePresence>
 
-        {/* Empty saved state */}
         {activeFilter === "saved" && finalSheets.length === 0 && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}

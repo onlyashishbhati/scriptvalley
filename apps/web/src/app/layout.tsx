@@ -76,7 +76,7 @@ export default function RootLayout({
           />
         </head>
         <body
-          className={`${inter.variable} antialiased min-h-screen flex flex-col mb-14`}
+          className={`${inter.variable} antialiased min-h-screen flex flex-col`}
           style={{
             fontFamily:      "var(--font-inter), var(--font-sans)",
             backgroundColor: "var(--bg-base)",

@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, BookOpen, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import CourseSidebar from "./CourseSidebar";
+import CheatSheetSidebarCard from "./CheatSheetSidebarCard";
 import { Course } from "../../../courseTypes";
 
 interface Props {
@@ -41,9 +42,6 @@ export default function CourseShell({ course, children }: Props) {
   };
 
   return (
-    // mt-16 = navbar height. h-[calc(100vh-4rem)] fills exactly the remaining viewport.
-    // overflow-hidden on root prevents the page itself from scrolling —
-    // only sidebar and main scroll independently.
     <div className="flex mt-16 h-[calc(100vh-4rem)] overflow-hidden bg-[var(--bg-base)]">
 
       {/* ── Mobile drawer ─────────────────────────────────────────────────── */}
@@ -73,7 +71,11 @@ export default function CourseShell({ course, children }: Props) {
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              {/* Drawer scrolls independently */}
+              {/* Cheat sheet card also shown in the mobile drawer, same
+                  top-of-sidebar placement as desktop. */}
+              <div className="pt-3 shrink-0">
+                <CheatSheetSidebarCard courseSlug={course.slug} />
+              </div>
               <div className="flex-1 overflow-y-auto">
                 <CourseSidebar {...sidebarProps} onNavigate={() => setDrawerOpen(false)} />
               </div>
@@ -82,10 +84,9 @@ export default function CourseShell({ course, children }: Props) {
         )}
       </AnimatePresence>
 
-      {/* ── Desktop sidebar — fixed, scrolls independently ──────────────── */}
+      {/* ── Desktop sidebar ──────────────────────────────────────────────── */}
       <aside className="hidden md:flex flex-col w-72 shrink-0 border-r border-[var(--border-subtle)] h-full overflow-hidden">
 
-        {/* Sidebar header — stays pinned */}
         <div className="px-4 py-4 border-b border-[var(--border-subtle)] shrink-0 bg-[var(--bg-base)]">
           <Link
             href="/courses"
@@ -108,7 +109,6 @@ export default function CourseShell({ course, children }: Props) {
             </div>
           </div>
 
-          {/* Progress bar — structured courses only */}
           {course.template === "structured" && (() => {
             const total = (course.modules ?? []).reduce((s, m) => s + (m.lessons?.length ?? 0), 0);
             const done  = completedSet.size;
@@ -130,16 +130,21 @@ export default function CourseShell({ course, children }: Props) {
           })()}
         </div>
 
-        {/* Sidebar nav — scrolls independently */}
+        {/* Cheat sheet — moved here from the bottom of the main content
+            column, so it's visible immediately on every page of the
+            course, not just the overview page after a long scroll. */}
+        <div className="pt-3 shrink-0">
+          <CheatSheetSidebarCard courseSlug={course.slug} />
+        </div>
+
         <div className="flex-1 overflow-y-auto">
           <CourseSidebar {...sidebarProps} />
         </div>
       </aside>
 
-      {/* ── Main content — scrolls independently ────────────────────────── */}
+      {/* ── Main content ─────────────────────────────────────────────────── */}
       <main className="flex-1 min-w-0 overflow-y-auto">
 
-        {/* Mobile topbar */}
         <div className="md:hidden flex items-center gap-2 px-4 h-12 border-b border-[var(--border-subtle)] bg-[var(--bg-base)] sticky top-0 z-20">
           <button
             onClick={() => setDrawerOpen(true)}
@@ -151,8 +156,7 @@ export default function CourseShell({ course, children }: Props) {
             {course.title}
           </span>
         </div>
-
-        <div className="max-w-3xl mx-auto w-full">
+        <div className="max-w-3xl mx-auto w-full pb-28">
           {children}
         </div>
       </main>

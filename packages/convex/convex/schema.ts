@@ -67,17 +67,29 @@ const experienceV = v.object({
   order: v.number(),
 });
 
-// NEW — Interests: short tag chips, e.g. "Gaming", "Film Making", "Traveling".
-// Plain string array, same pattern as skills — no icon mapping needed since
-// these are free-form and rendered as text-only pills.
-const MAX_INTERESTS = 12;
+const educationV = v.object({
+  id: v.string(),
+  institution: v.string(),
+  degree: v.string(),
+  fieldOfStudy: v.optional(v.string()),
+  startDate: v.string(),
+  endDate: v.optional(v.string()),
+  current: v.boolean(),
+  order: v.number(),
+});
 
-// NEW — Tools: icon-labeled chips, e.g. "Figma", "VS Code", "Docker".
-// Stored as plain strings; the icon is resolved client-side from a known
-// icon map (Lucide / simple-icons), falling back to a generic icon for
-// anything not in the map. No need to store an icon reference in the DB —
-// keeps this forward-compatible if the icon set changes later.
+const MAX_INTERESTS = 12;
 const MAX_TOOLS = 16;
+const MAX_EDUCATION = 6;
+const MAX_TAGLINE = 80;
+
+// ─── Blend limits ───────────────────────────────────────────────────────────
+const MAX_PRIVATE_BLEND_MEMBERS = 10;
+const MAX_PUBLIC_BLEND_MEMBERS = 50;
+const MAX_BLEND_NAME_LEN = 60;
+const MAX_BLEND_DESC_LEN = 200;
+const INVITE_CODE_LENGTH = 6;
+const MAX_RESOURCES_PER_BLEND = 10;
 
 export default defineSchema({
   // ── Users ──────────────────────────────────────────────────────────────────
@@ -95,40 +107,42 @@ export default defineSchema({
     banned: v.optional(v.boolean()),
     flagged: v.optional(v.boolean()),
 
-    // ── Mini-Portfolio ───────────────────────────────────────────────────────
     username: v.optional(v.string()),
     profileVisibility: v.optional(
       v.union(v.literal("public"), v.literal("private")),
     ),
+
+    // NEW — dev-profile "pin one to your dashboard" shortcuts. Distinct
+    // from user_sheet_save / saved_courses (unlimited bookmarks browsable
+    // on each feature's own page) — a pin is a single, dashboard-visible
+    // "what I'm actively working on right now" item. Pinning a new one
+    // simply overwrites the old value; no separate unpin-first step.
+    pinnedSheetSlug: v.optional(v.string()),
+    pinnedCourseSlug: v.optional(v.string()),
   })
     .index("by_user_id", ["userId"])
     .index("by_role", ["role"])
     .index("by_username", ["username"]),
 
-  // ── Portfolio (bio · skills · projects · experience · interests · tools) ───
   portfolio: defineTable({
     userId: v.string(),
 
     bio: v.optional(v.string()),
+    tagline: v.optional(v.string()),
     skills: v.optional(v.array(v.string())),
     projects: v.optional(v.array(projectV)),
     experience: v.optional(v.array(experienceV)),
+    education: v.optional(v.array(educationV)),
 
-    // NEW fields ─────────────────────────────────────────────────────────────
     interests: v.optional(v.array(v.string())),
     tools: v.optional(v.array(v.string())),
 
-    // NEW — showStats: controls whether the public profile shows the
-    // ScriptValley-specific block (streak / solved / sheets / courses /
-    // badges row). Defaults to true (existing behavior) when the field is
-    // absent, so this is backward-compatible with rows created before this
-    // field existed — no migration/backfill needed.
+    accentColor: v.optional(v.string()),
     showStats: v.optional(v.boolean()),
 
     updatedAt: v.number(),
   }).index("by_user_id", ["userId"]),
 
-  // ── Admins ─────────────────────────────────────────────────────────────────
   admins: defineTable({
     userId: v.string(),
     email: v.string(),
@@ -136,7 +150,6 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_user_id", ["userId"]),
 
-  // ── Socials ────────────────────────────────────────────────────────────────
   socials: defineTable({
     userId: v.string(),
     linkedin: v.optional(v.string()),
@@ -147,7 +160,6 @@ export default defineSchema({
     updatedAt: v.optional(v.string()),
   }).index("by_user_id", ["userId"]),
 
-  // ── Platforms ──────────────────────────────────────────────────────────────
   platforms: defineTable({
     userId: v.string(),
     leetcodeUrl: v.optional(v.string()),
@@ -156,7 +168,6 @@ export default defineSchema({
     createdAt: v.optional(v.string()),
   }).index("by_user_id", ["userId"]),
 
-  // ── Code executions ────────────────────────────────────────────────────────
   codeExecutions: defineTable({
     userId: v.string(),
     language: v.string(),
@@ -165,7 +176,6 @@ export default defineSchema({
     error: v.optional(v.string()),
   }).index("by_user_id", ["userId"]),
 
-  // ── Snippets ───────────────────────────────────────────────────────────────
   snippets: defineTable({
     userId: v.string(),
     title: v.string(),
@@ -176,8 +186,6 @@ export default defineSchema({
   })
     .index("by_user_id", ["userId"])
     .index("by_user_id_and_privacy", ["userId", "isPrivate"])
-    // Supports the public snippet feed (getSnippets) without a full-table
-    // scan-and-filter as the table grows.
     .index("by_privacy", ["isPrivate"]),
 
   snippetComments: defineTable({
@@ -188,7 +196,6 @@ export default defineSchema({
     content: v.string(),
   }).index("by_snippet_id", ["snippetId"]),
 
-  // ── DSA Sheets ─────────────────────────────────────────────────────────────
   dsaSheets: defineTable({
     slug: v.string(),
     name: v.string(),
@@ -215,7 +222,6 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_createdBy", ["createdBy"]),
 
-  // ── Attempts ───────────────────────────────────────────────────────────────
   attempts: defineTable({
     userId: v.string(),
     questionTitle: v.string(),
@@ -236,7 +242,6 @@ export default defineSchema({
     .index("by_user_sheet", ["userId", "sheetSlug"])
     .index("by_user_question", ["userId", "questionTitle"]),
 
-  // ── Sheet progress ─────────────────────────────────────────────────────────
   sheet_progress: defineTable({
     userId: v.string(),
     sheetSlug: v.string(),
@@ -248,14 +253,12 @@ export default defineSchema({
     .index("by_user_sheet", ["userId", "sheetSlug"])
     .index("by_sheet", ["sheetSlug"]),
 
-  user_sheet_follow: defineTable({
-    userId: v.string(),
-    sheetSlug: v.string(),
-    followedAt: v.number(),
-  })
-    .index("by_user", ["userId"])
-    .index("by_sheet", ["sheetSlug"])
-    .index("by_user_sheet", ["userId", "sheetSlug"]),
+  // REMOVED: user_sheet_follow. The "follow" concept has been retired —
+  // user_sheet_save (below) now serves both roles it used to split: the
+  // persistent "sheets I care about" set that potd.ts personalizes off of,
+  // AND the multi-item bookmark list browsable on /dsa-sheet. `pinnedSheetSlug`
+  // on `users` (above) covers the NEW single-item "show this on my
+  // dashboard" concept, which save/follow never provided.
 
   user_sheet_save: defineTable({
     userId: v.string(),
@@ -266,7 +269,6 @@ export default defineSchema({
     .index("by_sheet", ["sheetSlug"])
     .index("by_user_sheet", ["userId", "sheetSlug"]),
 
-  // ── Starred questions ──────────────────────────────────────────────────────
   starred_questions: defineTable({
     userId: v.string(),
     sheetSlug: v.string(),
@@ -278,7 +280,6 @@ export default defineSchema({
     .index("by_user_question", ["userId", "questionTitle"])
     .index("by_user_sheet", ["userId", "sheetSlug"]),
 
-  // ── Question notes ─────────────────────────────────────────────────────────
   questionNotes: defineTable({
     userId: v.string(),
     questionTitle: v.string(),
@@ -289,7 +290,6 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_user_question", ["userId", "questionTitle"]),
 
-  // ── POTD logs ──────────────────────────────────────────────────────────────
   potdLogs: defineTable({
     userId: v.string(),
     date: v.string(),
@@ -302,7 +302,6 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_user_date", ["userId", "date"]),
 
-  // ── Interview experiences ──────────────────────────────────────────────────
   experiences: defineTable({
     userId: v.string(),
     slug: v.string(),
@@ -337,7 +336,6 @@ export default defineSchema({
     .index("by_status_and_createdAt", ["status", "createdAt"])
     .index("by_userId", ["userId"]),
 
-  // ── Instructors ────────────────────────────────────────────────────────────
   instructors: defineTable({
     userId: v.string(),
     email: v.string(),
@@ -348,7 +346,6 @@ export default defineSchema({
     approvedAt: v.optional(v.number()),
   }).index("by_user_id", ["userId"]),
 
-  // ── Courses ────────────────────────────────────────────────────────────────
   courses: defineTable({
     title: v.string(),
     slug: v.string(),
@@ -392,7 +389,6 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_createdBy", ["createdBy"]),
 
-  // ── Lesson progress ────────────────────────────────────────────────────────
   lesson_progress: defineTable({
     userId: v.string(),
     courseSlug: v.string(),
@@ -411,7 +407,6 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_user_slug", ["userId", "courseSlug"]),
 
-  // ── Announcements ──────────────────────────────────────────────────────────
   announcements: defineTable({
     message: v.string(),
     type: v.union(
@@ -424,10 +419,91 @@ export default defineSchema({
     createdBy: v.string(),
     createdAt: v.number(),
   }).index("by_active", ["active"]),
+
+  // ── Blend ──────────────────────────────────────────────────────────────────
+  blends: defineTable({
+    name: v.string(),
+    slug: v.string(),
+    description: v.optional(v.string()),
+    ownerUserId: v.string(),
+    visibility: v.union(v.literal("private"), v.literal("public")),
+    resourceType: v.union(v.literal("sheet"), v.literal("course")),
+    inviteCode: v.string(),
+    memberCount: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_owner", ["ownerUserId"])
+    .index("by_invite_code", ["inviteCode"])
+    .index("by_slug", ["slug"])
+    .index("by_visibility", ["visibility"]),
+
+  blend_members: defineTable({
+    blendId: v.id("blends"),
+    userId: v.string(),
+    userName: v.string(),
+    role: v.union(v.literal("owner"), v.literal("member")),
+    joinedAt: v.number(),
+  })
+    .index("by_blend", ["blendId"])
+    .index("by_user", ["userId"])
+    .index("by_blend_user", ["blendId", "userId"]),
+
+  blend_resources: defineTable({
+    blendId: v.id("blends"),
+    resourceSlug: v.string(),
+    resourceName: v.string(),
+    addedByUserId: v.string(),
+    addedAt: v.number(),
+  })
+    .index("by_blend", ["blendId"])
+    .index("by_blend_slug", ["blendId", "resourceSlug"]),
+
+  blend_join_requests: defineTable({
+    blendId: v.id("blends"),
+    userId: v.string(),
+    userName: v.string(),
+    status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
+    requestedAt: v.number(),
+    respondedAt: v.optional(v.number()),
+  })
+    .index("by_blend", ["blendId"])
+    .index("by_blend_user", ["blendId", "userId"])
+    .index("by_blend_status", ["blendId", "status"]),
+
+  // ── Notifications ──────────────────────────────────────────────────────────
+  notifications: defineTable({
+    userId: v.string(),
+    type: v.union(
+      v.literal("blend_member_joined"),
+      v.literal("blend_removed"),
+      v.literal("blend_milestone"),
+      v.literal("blend_join_request"),
+      v.literal("blend_join_approved"),
+      v.literal("blend_join_rejected"),
+      v.literal("generic"),
+    ),
+    title: v.string(),
+    body: v.optional(v.string()),
+    link: v.optional(v.string()),
+    read: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_read", ["userId", "read"]),
 });
 
-// Exported for use in portfolio.ts validation (max array lengths).
 export const PORTFOLIO_LIMITS = {
   MAX_INTERESTS,
   MAX_TOOLS,
+  MAX_EDUCATION,
+  MAX_TAGLINE,
+};
+
+export const BLEND_LIMITS = {
+  MAX_PRIVATE_BLEND_MEMBERS,
+  MAX_PUBLIC_BLEND_MEMBERS,
+  MAX_BLEND_NAME_LEN,
+  MAX_BLEND_DESC_LEN,
+  INVITE_CODE_LENGTH,
+  MAX_RESOURCES_PER_BLEND,
 };

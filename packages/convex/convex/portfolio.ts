@@ -1,6 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { SKILL_SUGGESTIONS, TOOL_SUGGESTIONS } from "./constants";
+import { SKILL_SUGGESTIONS, TOOL_SUGGESTIONS, ACCENT_COLOR_KEYS } from "./constants";
 import { PORTFOLIO_LIMITS } from "./schema";
 
 export { SKILL_SUGGESTIONS, TOOL_SUGGESTIONS };
@@ -27,9 +27,19 @@ const experienceV = v.object({
   order: v.number(),
 });
 
-// Single source of truth for these limits lives in schema.ts (PORTFOLIO_LIMITS)
-// so the validation here can't silently drift out of sync with it.
-const { MAX_INTERESTS, MAX_TOOLS } = PORTFOLIO_LIMITS;
+// NEW — mirrors experienceV's date-range shape.
+const educationV = v.object({
+  id: v.string(),
+  institution: v.string(),
+  degree: v.string(),
+  fieldOfStudy: v.optional(v.string()),
+  startDate: v.string(),
+  endDate: v.optional(v.string()),
+  current: v.boolean(),
+  order: v.number(),
+});
+
+const { MAX_INTERESTS, MAX_TOOLS, MAX_EDUCATION, MAX_TAGLINE } = PORTFOLIO_LIMITS;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -75,11 +85,14 @@ export const getPublicPortfolio = query({
 
     return {
       bio: row.bio ?? null,
+      tagline: row.tagline ?? null,
       skills: row.skills ?? [],
       projects: [...(row.projects ?? [])].sort((a, b) => a.order - b.order),
       experience: [...(row.experience ?? [])].sort((a, b) => a.order - b.order),
+      education: [...(row.education ?? [])].sort((a, b) => a.order - b.order),
       interests: row.interests ?? [],
       tools: row.tools ?? [],
+      accentColor: row.accentColor ?? null,
       showStats: row.showStats ?? true,
     };
   },
@@ -91,16 +104,19 @@ export const upsertPortfolio = mutation({
   args: {
     userId: v.string(),
     bio: v.optional(v.string()),
+    tagline: v.optional(v.string()),
     skills: v.optional(v.array(v.string())),
     projects: v.optional(v.array(projectV)),
     experience: v.optional(v.array(experienceV)),
+    education: v.optional(v.array(educationV)),
     interests: v.optional(v.array(v.string())),
     tools: v.optional(v.array(v.string())),
+    accentColor: v.optional(v.string()),
     showStats: v.optional(v.boolean()),
   },
   handler: async (
     ctx,
-    { userId, bio, skills, projects, experience, interests, tools, showStats },
+    { userId, bio, tagline, skills, projects, experience, education, interests, tools, accentColor, showStats },
   ) => {
     if (!userId) throw new Error("Missing userId");
 
@@ -109,6 +125,13 @@ export const upsertPortfolio = mutation({
 
     const cleanBio = bio?.trim() ?? "";
     if (cleanBio.length > 300) throw new Error("Bio must be 300 characters or fewer.");
+
+    const cleanTagline = tagline?.trim() ?? "";
+    if (cleanTagline.length > MAX_TAGLINE)
+      throw new Error(`Tagline must be ${MAX_TAGLINE} characters or fewer.`);
+
+    if (accentColor !== undefined && accentColor !== "" && !ACCENT_COLOR_KEYS.includes(accentColor as any))
+      throw new Error(`Invalid accent color "${accentColor}".`);
 
     const cleanSkills = (skills ?? []).map((s) => s.trim()).filter(Boolean);
     if (cleanSkills.length > 30) throw new Error("You can add up to 30 skills.");
@@ -153,15 +176,30 @@ export const upsertPortfolio = mutation({
         throw new Error(`Invalid end date "${e.endDate}" for "${e.company}" — use YYYY-MM.`);
     }
 
+    const cleanEducation = education ?? [];
+    if (cleanEducation.length > MAX_EDUCATION)
+      throw new Error(`You can add up to ${MAX_EDUCATION} education entries.`);
+    for (const ed of cleanEducation) {
+      if (!ed.institution.trim()) throw new Error("Each education entry must have an institution name.");
+      if (!ed.degree.trim()) throw new Error("Each education entry must have a degree.");
+      if (!isValidMonthDate(ed.startDate))
+        throw new Error(`Invalid start date "${ed.startDate}" for "${ed.institution}" — use YYYY-MM.`);
+      if (ed.endDate && !isValidMonthDate(ed.endDate))
+        throw new Error(`Invalid end date "${ed.endDate}" for "${ed.institution}" — use YYYY-MM.`);
+    }
+
     const now = Date.now();
     const payload = {
       userId,
       bio: cleanBio || undefined,
+      tagline: cleanTagline || undefined,
       skills: cleanSkills.length > 0 ? cleanSkills : undefined,
       projects: cleanProjects.length > 0 ? cleanProjects : undefined,
       experience: cleanExperience.length > 0 ? cleanExperience : undefined,
+      education: cleanEducation.length > 0 ? cleanEducation : undefined,
       interests: cleanInterests.length > 0 ? cleanInterests : undefined,
       tools: cleanTools.length > 0 ? cleanTools : undefined,
+      accentColor: accentColor || undefined,
       showStats: showStats ?? true,
       updatedAt: now,
     };
