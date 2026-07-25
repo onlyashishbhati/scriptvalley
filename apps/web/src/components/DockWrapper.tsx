@@ -26,6 +26,11 @@ export function DockWrapper() {
       href: "/dev-profile",
     },
     {
+      title: "Courses",
+      icon: <Presentation className="h-full w-full" />,
+      href: "/courses",
+    },
+    {
       title: "Sheets",
       icon: <FileSpreadsheet className="h-full w-full" />,
       href: "/dsa-sheet",
@@ -44,16 +49,6 @@ export function DockWrapper() {
       title: "Starred",
       icon: <Star className="h-full w-full" />,
       href: "/starred",
-    },
-    {
-      title: "Courses",
-      icon: <Presentation className="h-full w-full" />,
-      href: "/courses",
-    },
-    {
-      title: "Snippets",
-      icon: <SquareLibrary className="h-full w-full" />,
-      href: "/snippets",
     },
     {
       title: "Playground",
